@@ -1,8 +1,11 @@
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple
+
+from modules.obsidian_parser import convert_markdown_links, extract_image_links
 
 
 def scan_md_files(root_dir: str) -> List[str]:
@@ -109,15 +112,26 @@ def get_files_to_process(
 def process_single_note(
     source_path: str,
     rel_path: str,
+    source_root: str,
     config: dict,
     deepseek_client_func: Callable[[str, dict], str],
 ) -> bool:
-    """Read a source note, call the DeepSeek API, and write the result to the
-    Hugo content directory.
+    """Read a source note, process images, call DeepSeek, and write to Hugo
+    content directory.
+
+    Processing order:
+
+    1. Read raw content from the source file.
+    2. Extract image links (wiki-style and Markdown), copy images to the
+       ``static/`` directory, and replace links with Hugo-compatible URLs.
+    3. Send the transformed content to the DeepSeek API.
+    4. Write the API response to ``config.output.content_dir``, preserving
+       the relative path structure of the original note.
 
     Args:
         source_path: Absolute path to the source .md file.
-        rel_path: Relative path of the note, preserved in the output directory.
+        rel_path: Relative path of the note (relative to *source_root*).
+        source_root: Root directory of all source notes.
         config: Full application configuration dict.
         deepseek_client_func: Callable ``(content: str, config: dict) -> str``
             that returns the processed text.  Must raise on API failure.
@@ -126,19 +140,60 @@ def process_single_note(
         True on success.
 
     Raises:
-        Exception: If the DeepSeek client returns None/empty or raises.
+        Exception: If the DeepSeek client returns empty, or on any processing
+            failure (image copy, etc.).
     """
     print(f"Processing: {rel_path} ...")
 
+    # 1. Read raw content
     with open(source_path, "r", encoding="utf-8") as f:
         raw_content = f.read()
 
-    processed = deepseek_client_func(raw_content, config)
+    # 2. Extract & copy images
+    image_handling_cfg = config.get("processing", {}).get(
+        "image_handling", {}
+    )
+    image_handling_enabled = image_handling_cfg.get("enabled", False)
+    target_static_dir = image_handling_cfg.get(
+        "target_static_dir", "static/images"
+    )
+
+    if image_handling_enabled and raw_content.strip():
+        image_links = extract_image_links(raw_content, source_path, source_root)
+        replacements: List[Tuple[str, str]] = []
+        for source_abs, target_rel, original_syntax in image_links:
+            dest_path = os.path.join(target_static_dir, target_rel)
+            if not os.path.isfile(dest_path):
+                os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+                try:
+                    shutil.copy2(source_abs, dest_path)
+                    print(f"  [image] copied: {os.path.basename(source_abs)}")
+                except OSError as e:
+                    raise Exception(
+                        f"Failed to copy image {source_abs} for {rel_path}: {e}"
+                    ) from e
+            else:
+                print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
+            replacements.append(
+                (original_syntax, f"![](/{target_rel})")
+            )
+
+        if replacements:
+            content_to_send = convert_markdown_links(raw_content, replacements)
+            print(f"  [image] replaced {len(replacements)} link(s)")
+        else:
+            content_to_send = raw_content
+    else:
+        content_to_send = raw_content
+
+    # 3. Call DeepSeek API
+    processed = deepseek_client_func(content_to_send, config)
     if not processed:
         raise Exception(
             f"DeepSeek API returned empty result for: {source_path}"
         )
 
+    # 4. Write to Hugo content directory
     content_dir = config.get("output", {}).get("content_dir", "content")
     dest_path = os.path.join(content_dir, rel_path)
     os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
@@ -177,9 +232,11 @@ def process_all_notes(
     for rel_path in to_process:
         source_path = os.path.join(source_root, rel_path)
         try:
-            process_single_note(source_path, rel_path, config, deepseek_client_func)
+            process_single_note(
+                source_path, rel_path, source_root, config, deepseek_client_func
+            )
         except Exception:
-            print(f"ERROR: DeepSeek API call failed for {rel_path}, aborting.")
+            print(f"ERROR: Failed to process {rel_path}, aborting.")
             raise
 
     if to_delete:
