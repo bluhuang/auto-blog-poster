@@ -189,9 +189,11 @@ def process_single_note(
     # 3. Call DeepSeek API
     processed = deepseek_client_func(content_to_send, config)
     if not processed:
-        raise Exception(
-            f"DeepSeek API returned empty result for: {source_path}"
+        print(
+            f"  WARNING: DeepSeek API returned empty result for {rel_path}, "
+            f"using unprocessed content as fallback."
         )
+        processed = content_to_send
 
     # 4. Write to Hugo content directory
     content_dir = config.get("output", {}).get("content_dir", "content")
