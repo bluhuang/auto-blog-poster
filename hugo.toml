@@ -1,4 +1,4 @@
 baseURL = "https://bluhuang.github.io/blogs-of-bluhuang/"
 languageCode = "zh-cn"
 title = "BluHuang's Blog"
-theme = "PaperMod"
+theme = "newsroom"

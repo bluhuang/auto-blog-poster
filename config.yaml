@@ -19,7 +19,7 @@ processing:
     model: "deepseek-v4-flash"
     temperature: 0.3
     max_tokens: 4000
-    prompt_template: '请对以下Markdown内容进行脱敏（删除公司名、人名等）、润色语句、删除所有与"面试"相关的内容。注意：不要修改任何图片链接语法，保持![alt](url)原样。原文：\n\n{content}'
+    prompt_template: '请对以下Markdown内容进行脱敏（删除公司名、人名等）、润色语句、删除所有与"面试"相关的内容。只输出处理后的纯Markdown内容，不要添加任何解释、不要添加"好的"、"以下是处理后的内容"等前缀或后缀，直接输出结果。\n\n原文：\n\n{content}'
 
 output:
   repo: "blogs-of-bluhuang"
