@@ -2,6 +2,7 @@ source:
   repo: "blu-obsidian"
   owner: "bluhuang"
   branch: "main"
+  notes_subdir: "2 Notes"
   notes_dir: "content/"
   file_pattern: "*.md"
 
