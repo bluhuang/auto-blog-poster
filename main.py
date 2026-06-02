@@ -1,48 +1,82 @@
+import os
 import sys
+
 import yaml
-from pathlib import Path
+from dotenv import load_dotenv
+
+from modules import content_processor, deepseek_client, deployer, git_ops, hugo_builder
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
+    """Load and return the YAML configuration file."""
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def main():
-    print("=== Auto Blog Poster ===")
+def main() -> None:
+    print("=" * 60)
+    print("  Auto Blog Poster")
+    print("=" * 60)
+
+    # Load environment variables
+    load_dotenv(override=False)
+
     config = load_config()
-    print(f"Config loaded: {config['source']['repo']} -> {config['output']['repo']}")
+    source_cfg = config.get("source", {})
+    output_cfg = config.get("output", {})
+    print(f"Source repo: {source_cfg.get('owner')}/{source_cfg.get('repo')}")
+    print(f"Output repo: {output_cfg.get('owner')}/{output_cfg.get('repo')}")
 
-    print("[1/5] Pulling Obsidian notes from source repo ...")
-    from modules.git_ops import pull_source_repo
-    source_path = pull_source_repo(config)
-    print(f"  Source notes at: {source_path}")
+    # Cache path
+    cache_file = config.get("processing", {}).get(
+        "cache_file", ".hash_cache.json"
+    )
 
-    print("[2/5] Parsing Obsidian markdown ...")
-    from modules.obsidian_parser import parse_notes
-    notes = parse_notes(source_path, config)
-    print(f"  Parsed {len(notes)} notes")
+    # ── Step 1: Pull source notes ──────────────────────────────────
+    print()
+    print("[1/4] Pulling source notes repository ...")
+    try:
+        notes_root = git_ops.pull_source_repo(config)
+    except Exception as e:
+        print(f"FATAL: Failed to pull source repo: {e}")
+        sys.exit(1)
 
-    print("[3/5] Processing content with DeepSeek ...")
-    from modules.content_processor import filter_new_notes, save_cache
-    from modules.deepseek_client import call_deepseek
-    notes = filter_new_notes(notes, config)
-    for note in notes:
-        note["content"] = call_deepseek(note["content"], config)
-    save_cache(notes, config)
-    print(f"  Processed {len(notes)} notes")
+    # ── Step 2: Process notes (incremental) ────────────────────────
+    print()
+    print("[2/4] Processing notes (incremental) ...")
+    try:
+        content_processor.process_all_notes(
+            source_root=str(notes_root),
+            config=config,
+            deepseek_client_func=deepseek_client.call_deepseek,
+            hash_cache_path=cache_file,
+        )
+    except Exception as e:
+        print(f"FATAL: Content processing failed: {e}")
+        sys.exit(1)
 
-    print("[4/5] Building Hugo site ...")
-    from modules.hugo_builder import build_site
-    build_site(config)
-    print("  Hugo build complete")
+    # ── Step 3: Build Hugo site ────────────────────────────────────
+    print()
+    print("[3/4] Building Hugo site ...")
+    try:
+        hugo_builder.build_site(config)
+    except Exception as e:
+        print(f"FATAL: Hugo build failed: {e}")
+        sys.exit(1)
 
-    print("[5/5] Deploying to output repo ...")
-    from modules.deployer import deploy
-    deploy(config)
-    print("  Deployment complete")
+    # ── Step 4: Deploy to GitHub Pages ─────────────────────────────
+    print()
+    print("[4/4] Deploying to GitHub Pages ...")
+    try:
+        deployer.deploy(config)
+    except Exception as e:
+        print(f"FATAL: Deployment failed: {e}")
+        sys.exit(1)
 
-    print("=== Done ===")
+    print()
+    print("=" * 60)
+    print("  Pipeline completed successfully")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
