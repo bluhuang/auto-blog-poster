@@ -159,7 +159,7 @@ def process_single_note(
     )
 
     if image_handling_enabled and raw_content.strip():
-        image_links = extract_image_links(raw_content, source_path, source_root)
+        image_links = extract_image_links(raw_content, source_path, source_root, config)
         replacements: List[Tuple[str, str]] = []
         for source_abs, target_rel, original_syntax in image_links:
             dest_path = os.path.join(target_static_dir, target_rel)
@@ -199,7 +199,12 @@ def process_single_note(
     if processed.startswith("---"):
         processed = "\n" + processed
 
-    # 5. Write to Hugo content directory
+    # 5. Prepend front matter with filename as title
+    title = os.path.splitext(os.path.basename(rel_path))[0]
+    front_matter = f"---\ntitle: \"{title}\"\n---\n\n"
+    processed = front_matter + processed
+
+    # 6. Write to Hugo content directory
     content_dir = config.get("output", {}).get("content_dir", "content")
     dest_path = os.path.join(content_dir, rel_path)
     os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)

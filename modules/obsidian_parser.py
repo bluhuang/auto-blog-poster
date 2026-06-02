@@ -5,7 +5,10 @@ from typing import List, Optional, Tuple
 
 
 def extract_image_links(
-    content: str, source_file_path: str, notes_root: str
+    content: str,
+    source_file_path: str,
+    notes_root: str,
+    config: Optional[dict] = None,
 ) -> List[Tuple[str, str, str]]:
     """Extract image references from Obsidian/Markdown content and compute
     source absolute paths and target relative paths.
@@ -15,13 +18,15 @@ def extract_image_links(
     * Obsidian wiki-style: ``![[image.png]]``
     * Standard Markdown: ``![alt](path)`` (local files only; http/https skipped)
 
-    For wiki-style images the function looks in the note's directory first,
-    then falls back to a global attachments directory if configured.
+    For wiki-style images the function follows the lookup strategies from
+    ``config.processing.image_handling.wiki_image_lookup`` (e.g. ``same_dir``,
+    ``relative_subdir`` with ``subdir``).
 
     Args:
         content: Raw markdown content of the note.
         source_file_path: Absolute path to the source note file.
         notes_root: Root directory of all notes (e.g. ``.temp/source_repo/2 Notes``).
+        config: Full application configuration dict (optional).
 
     Returns:
         A list of ``(source_abs_path, target_rel_path, original_syntax)`` tuples.
@@ -43,7 +48,7 @@ def extract_image_links(
         filename = match.group(1).strip()
         original_syntax = match.group(0)
 
-        source_abs = _find_wiki_image(filename, source_dir)
+        source_abs = _find_wiki_image(filename, source_dir, config)
         if source_abs is None:
             print(f"  Warning: wiki image not found: {filename}")
             continue
@@ -112,15 +117,63 @@ def _compute_note_rel_dir(source_file_path: str, notes_root: str) -> str:
     return rel if rel != "." else ""
 
 
-def _find_wiki_image(filename: str, source_dir: str) -> Optional[str]:
-    """Look for a wiki-style image in the note's directory.
+def _find_wiki_image(
+    filename: str, source_dir: str, config: Optional[dict] = None
+) -> Optional[str]:
+    """Look for a wiki-style image using configured lookup strategies.
 
-    Returns the absolute path or None.
+    Returns the absolute path of the first match, or None.
+
+    When *config* is provided, the strategies are read from
+    ``processing.image_handling.wiki_image_lookup``.  Without config only
+    ``same_dir`` is tried.
     """
-    candidate = os.path.join(source_dir, filename)
-    if os.path.isfile(candidate):
-        return candidate
+    strategies = _get_lookup_strategies(config)
+
+    for strategy in strategies:
+        stype = strategy.get("type")
+        if stype == "same_dir":
+            candidate = os.path.join(source_dir, filename)
+            if os.path.isfile(candidate):
+                return candidate
+
+        elif stype == "relative_subdir":
+            subdir = strategy.get("subdir")
+            if subdir:
+                candidate = os.path.join(source_dir, subdir, filename)
+                if os.path.isfile(candidate):
+                    return candidate
+
+        elif stype == "global":
+            global_dir = strategy.get("dir")
+            if global_dir and os.path.isdir(global_dir):
+                candidate = os.path.join(global_dir, filename)
+                if os.path.isfile(candidate):
+                    return candidate
+
     return None
+
+
+def _get_lookup_strategies(
+    config: Optional[dict],
+) -> List[dict]:
+    """Return the ordered list of wiki-image lookup strategies from config,
+    falling back to a sensible default if not set."""
+    if config is None:
+        return [{"type": "same_dir"}]
+
+    image_handling = config.get("processing", {}).get("image_handling", {})
+    strategies = image_handling.get("wiki_image_lookup", None)
+    if strategies:
+        # Resolve global dir if a strategy references it
+        global_dir = image_handling.get("source_images_dir", "") or None
+        for s in strategies:
+            if s.get("type") == "global" and not s.get("dir"):
+                s["dir"] = global_dir if global_dir else ""
+        return strategies
+
+    # Default if no config key present
+    return [{"type": "same_dir"}]
 
 
 def _make_target_path(note_rel_dir: str, image_basename: str) -> str:

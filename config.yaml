@@ -15,6 +15,10 @@ processing:
     enabled: true
     source_images_dir: ""
     target_static_dir: "static/images"
+    wiki_image_lookup:
+      - type: "same_dir"
+      - type: "relative_subdir"
+        subdir: "attachments"
   deepseek_api:
     model: "deepseek-v4-flash"
     temperature: 0.3
