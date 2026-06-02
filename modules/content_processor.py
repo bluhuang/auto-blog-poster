@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 
 def scan_md_files(root_dir: str) -> List[str]:
@@ -104,3 +104,96 @@ def get_files_to_process(
         print("No changes detected.")
 
     return to_process, to_delete
+
+
+def process_single_note(
+    source_path: str,
+    rel_path: str,
+    config: dict,
+    deepseek_client_func: Callable[[str, dict], str],
+) -> bool:
+    """Read a source note, call the DeepSeek API, and write the result to the
+    Hugo content directory.
+
+    Args:
+        source_path: Absolute path to the source .md file.
+        rel_path: Relative path of the note, preserved in the output directory.
+        config: Full application configuration dict.
+        deepseek_client_func: Callable ``(content: str, config: dict) -> str``
+            that returns the processed text.  Must raise on API failure.
+
+    Returns:
+        True on success.
+
+    Raises:
+        Exception: If the DeepSeek client returns None/empty or raises.
+    """
+    print(f"Processing: {rel_path} ...")
+
+    with open(source_path, "r", encoding="utf-8") as f:
+        raw_content = f.read()
+
+    processed = deepseek_client_func(raw_content, config)
+    if not processed:
+        raise Exception(
+            f"DeepSeek API returned empty result for: {source_path}"
+        )
+
+    content_dir = config.get("output", {}).get("content_dir", "content")
+    dest_path = os.path.join(content_dir, rel_path)
+    os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+
+    with open(dest_path, "w", encoding="utf-8") as f:
+        f.write(processed)
+
+    print(f"  -> wrote {dest_path}")
+    return True
+
+
+def process_all_notes(
+    source_root: str,
+    config: dict,
+    deepseek_client_func: Callable[[str, dict], str],
+    hash_cache_path: str = ".hash_cache.json",
+) -> None:
+    """Orchestrate the full incremental processing pipeline.
+
+    1. Compare source directory against the hash cache to find changes.
+    2. Call ``process_single_note`` for every new or modified file.
+    3. Remove output files that correspond to deleted source notes.
+    4. Persist the updated hash cache.
+
+    If any DeepSeek API call fails, processing is terminated immediately and
+    the exception is re-raised with the offending source path in the message.
+
+    Args:
+        source_root: Root directory of the Obsidian notes.
+        config: Full application configuration dict.
+        deepseek_client_func: Callable ``(content: str, config: dict) -> str``.
+        hash_cache_path: Path to the hash cache JSON file.
+    """
+    to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
+
+    for rel_path in to_process:
+        source_path = os.path.join(source_root, rel_path)
+        try:
+            process_single_note(source_path, rel_path, config, deepseek_client_func)
+        except Exception:
+            print(f"ERROR: DeepSeek API call failed for {rel_path}, aborting.")
+            raise
+
+    if to_delete:
+        content_dir = config.get("output", {}).get("content_dir", "content")
+        for rel_path in to_delete:
+            dest_path = os.path.join(content_dir, rel_path)
+            if os.path.isfile(dest_path):
+                os.remove(dest_path)
+                print(f"Deleted: {dest_path}")
+
+    new_cache: Dict[str, str] = {}
+    for rel_path in scan_md_files(source_root):
+        abs_path = os.path.join(source_root, rel_path)
+        new_cache[rel_path] = compute_md5(abs_path)
+    save_hash_cache(hash_cache_path, new_cache)
+
+    print("Processing complete.")
