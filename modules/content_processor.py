@@ -195,7 +195,11 @@ def process_single_note(
         )
         processed = content_to_send
 
-    # 4. Write to Hugo content directory
+    # 4. Safeguard against Hugo YAML frontmatter mis-parsing
+    if processed.startswith("---"):
+        processed = "\n" + processed
+
+    # 5. Write to Hugo content directory
     content_dir = config.get("output", {}).get("content_dir", "content")
     dest_path = os.path.join(content_dir, rel_path)
     os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
