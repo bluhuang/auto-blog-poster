@@ -201,6 +201,14 @@ def _ensure_branch(repo_path: str, branch: str, clone_url: str) -> None:
         cwd=repo_path, check=False, timeout=30,
     )
     subprocess.run(
+        ["git", "config", "user.name", "Auto Blog Poster"],
+        cwd=repo_path, check=False, timeout=10,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "auto-blog-poster@users.noreply.github.com"],
+        cwd=repo_path, check=False, timeout=10,
+    )
+    subprocess.run(
         ["git", "commit", "--allow-empty", "-m", f"Init {branch}"],
         cwd=repo_path, check=True, timeout=30,
     )
