@@ -33,10 +33,13 @@ error:
   max_retries: 3
 
 hugo:
+  executable: "hugo"
+  build_options: "--minify"
   base_url: "https://bluhuang.github.io/blogs-of-bluhuang/"
   theme: "PaperMod"
   config_file: "hugo.toml"
 
 deployment:
-  commit_message: "chore: auto-deploy blog update"
-  local_path: "."
+  target_repo: "bluhuang/blogs-of-bluhuang"
+  target_branch: "gh-pages"
+  commit_message: "Auto deploy from blog poster [skip ci]"
