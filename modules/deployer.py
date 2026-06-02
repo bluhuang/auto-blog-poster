@@ -72,6 +72,19 @@ def deploy(config: dict) -> None:
 
     # 4. Commit and push
     os.chdir(deploy_path)
+
+    # Ensure git identity is set (required in CI environments)
+    subprocess.run(
+        ["git", "config", "user.name", "Auto Blog Poster"],
+        check=False,
+        timeout=10,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "auto-blog-poster@users.noreply.github.com"],
+        check=False,
+        timeout=10,
+    )
+
     subprocess.run(
         ["git", "add", "."],
         check=True,
