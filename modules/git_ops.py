@@ -1,10 +1,12 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 
 def pull_source_repo(config: dict) -> Path:
-    """Clone or pull the source Obsidian notes repository.
+    """Clone the source Obsidian notes repository using shallow clone and
+    sparse checkout — only the configured notes subdirectory is fetched.
 
     Uses GH_PAT from environment to authenticate. Returns the absolute path
     to the notes subdirectory (e.g. .temp/source_repo/2 Notes).
@@ -24,33 +26,32 @@ def pull_source_repo(config: dict) -> Path:
     temp_dir = os.path.join(".temp", "source_repo")
     clone_url = f"https://{token}@github.com/{repository}.git"
 
-    if not os.path.isdir(temp_dir):
-        print(f"Cloning {repository} to {temp_dir} ...")
-        subprocess.run(
-            ["git", "clone", clone_url, temp_dir],
-            check=True,
-            timeout=60,
-        )
-    else:
-        print(f"Pulling latest changes for {repository} ...")
-        subprocess.run(
-            ["git", "fetch", "origin"],
-            cwd=temp_dir,
-            check=True,
-            timeout=60,
-        )
-        subprocess.run(
-            ["git", "checkout", branch],
-            cwd=temp_dir,
-            check=True,
-            timeout=60,
-        )
-        subprocess.run(
-            ["git", "pull", "origin", branch],
-            cwd=temp_dir,
-            check=True,
-            timeout=60,
-        )
+    # Always start fresh to ensure consistent shallow-clone state
+    if os.path.isdir(temp_dir):
+        print(f"Removing previous clone: {temp_dir}")
+        shutil.rmtree(temp_dir)
+
+    print(f"Shallow cloning {repository} (branch={branch}, sparse)...")
+    subprocess.run(
+        [
+            "git", "clone",
+            "--depth", "1",
+            "--filter=blob:none",
+            "--sparse",
+            "--branch", branch,
+            clone_url,
+            temp_dir,
+        ],
+        check=True,
+        timeout=120,
+    )
+
+    print(f"Setting sparse-checkout to: {notes_subdir}")
+    subprocess.run(
+        ["git", "-C", temp_dir, "sparse-checkout", "set", notes_subdir],
+        check=True,
+        timeout=30,
+    )
 
     notes_path = os.path.join(temp_dir, notes_subdir)
     if not os.path.isdir(notes_path):
