@@ -1,7 +1,12 @@
 public/
 resources/
+.temp/
 .env
 __pycache__/
+*.py[cod]
 .hash_cache.json
 failed_notes.log
 .DS_Store
+*.log
+.idea/
+.vscode/
