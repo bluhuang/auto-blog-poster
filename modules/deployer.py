@@ -40,7 +40,8 @@ def deploy(config: dict) -> None:
     if not os.path.isdir(public_dir):
         raise ValueError(f"public/ directory not found: {public_dir}")
 
-    deploy_path = os.path.join(".temp", "deploy_repo")
+    deploy_path = os.path.join(os.getcwd(), ".temp", "deploy_repo")
+    orig_cwd = os.getcwd()
     clone_url = f"https://{token}@github.com/{target_repo}.git"
 
     # 1. Clone or pull
@@ -113,8 +114,7 @@ def deploy(config: dict) -> None:
         )
         print("Deploy finished.")
 
-    os.chdir(os.path.dirname(deploy_path))  # back to project root via .temp/..
-    os.chdir("..")  # back to project root
+    os.chdir(orig_cwd)  # restore original working directory
 
 
 # ---------------------------------------------------------------------------
