@@ -1,51 +1,106 @@
+import hashlib
 import json
+import os
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import Dict, List, Tuple
 
 
-def _load_cache(config: dict) -> Dict[str, str]:
-    """Load the hash cache from disk.
+def scan_md_files(root_dir: str) -> List[str]:
+    """Return a sorted list of relative paths of all .md files under root_dir.
 
-    The cache maps relative file paths to their last-known content hash.
+    Paths are relative to root_dir and use forward slashes.
     """
-    cache_file = Path(config["processing"]["cache_file"])
-    if cache_file.exists():
-        with open(cache_file, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    print(f"Scanning md files in: {root_dir}")
+    root = Path(root_dir)
+    md_files: List[str] = []
+    for filepath in root.rglob("*.md"):
+        rel_path = filepath.relative_to(root).as_posix()
+        md_files.append(rel_path)
+    print(f"  Found {len(md_files)} .md file(s)")
+    return sorted(md_files)
 
 
-def save_cache(notes: List[Dict], config: dict) -> None:
-    """Persist the hash cache to disk."""
-    cache_file = Path(config["processing"]["cache_file"])
-    cache = {note["path"]: note.get("hash", "") for note in notes}
-    with open(cache_file, "w", encoding="utf-8") as f:
+def compute_md5(file_path: str) -> str:
+    """Return the MD5 hex-digest of the file at file_path.
+
+    The file is read in 8192-byte chunks to avoid loading large files entirely
+    into memory.
+    """
+    md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
+            md5.update(chunk)
+    return md5.hexdigest()
+
+
+def load_hash_cache(cache_path: str) -> Dict[str, str]:
+    """Load the hash cache from a JSON file.
+
+    Returns an empty dict if the file does not exist or is unreadable.
+    The cache maps relative file paths (forward-slash) to their last-known MD5.
+    """
+    if not os.path.isfile(cache_path):
+        print(f"Cache file not found, starting fresh: {cache_path}")
+        return {}
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            cache: Dict[str, str] = json.load(f)
+        print(f"Loaded hash cache with {len(cache)} entries from {cache_path}")
+        return cache
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"Warning: failed to load cache file ({e}), starting fresh")
+        return {}
+
+
+def save_hash_cache(cache_path: str, cache: Dict[str, str]) -> None:
+    """Persist the hash cache dict to a JSON file on disk."""
+    with open(cache_path, "w", encoding="utf-8") as f:
         json.dump(cache, f, indent=2)
-    print(f"save_cache: wrote {len(cache)} entries")
+    print(f"Saved hash cache with {len(cache)} entries to {cache_path}")
 
 
-def _compute_hash(content: str) -> str:
-    """Return a stable hash for the given content string."""
-    import hashlib
-    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+def get_files_to_process(
+    root_dir: str, cache_path: str
+) -> Tuple[List[str], List[str]]:
+    """Determine which .md files need processing and which have been deleted.
 
+    Compares the current state of the notes directory against the hash cache
+    and returns two lists:
 
-def filter_new_notes(notes: List[Dict], config: dict) -> List[Dict]:
-    """Return only notes whose content has changed since the last run.
+        to_process  : new files, or existing files whose content hash changed
+        to_delete   : cached files that no longer exist on disk
 
-    Uses a hash cache stored at ``config['processing']['cache_file']``.
-    Notes that are new or modified are returned; unchanged notes are
-    skipped so that the DeepSeek API is only called for deltas.
+    The hash cache is ***not*** updated by this function; the caller decides
+    when to persist it via save_hash_cache().
     """
-    if not config["processing"].get("incremental", True):
-        return notes
+    current_files = set(scan_md_files(root_dir))
+    old_cache = load_hash_cache(cache_path)
+    old_keys = set(old_cache.keys())
 
-    cache = _load_cache(config)
-    result: List[Dict] = []
-    for note in notes:
-        current_hash = _compute_hash(note.get("content", ""))
-        note["hash"] = current_hash
-        cached_hash = cache.get(note.get("path", ""))
-        if cached_hash != current_hash:
-            result.append(note)
-    return result
+    to_process: List[str] = []
+    new_cache: Dict[str, str] = {}
+    for rel_path in sorted(current_files):
+        abs_path = os.path.join(root_dir, rel_path)
+        new_hash = compute_md5(abs_path)
+        new_cache[rel_path] = new_hash
+        old_hash = old_cache.get(rel_path)
+        if old_hash is None or old_hash != new_hash:
+            to_process.append(rel_path)
+
+    to_delete: List[str] = sorted(old_keys - current_files)
+
+    if to_process:
+        print(f"Files to process ({len(to_process)}):")
+        for p in to_process:
+            print(f"  + {p}")
+    if to_delete:
+        print(f"Files to delete ({len(to_delete)}):")
+        for p in to_delete:
+            print(f"  - {p}")
+    if not to_process and not to_delete:
+        print("No changes detected.")
+
+    return to_process, to_delete
