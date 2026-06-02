@@ -1,0 +1,7 @@
+public/
+resources/
+.env
+__pycache__/
+.hash_cache.json
+failed_notes.log
+.DS_Store

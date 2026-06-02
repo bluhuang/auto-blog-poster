@@ -1,0 +1,32 @@
+source:
+  repo: "blu-obsidian"
+  owner: "bluhuang"
+  branch: "main"
+  notes_dir: "content/"
+  file_pattern: "*.md"
+
+processing:
+  image_processing: true
+  image_download_dir: "static/images/"
+  incremental: true
+  cache_file: ".hash_cache.json"
+
+output:
+  repo: "blogs-of-bluhuang"
+  owner: "bluhuang"
+  branch: "gh-pages"
+  content_dir: "content/"
+  static_dir: "static/"
+
+error:
+  failed_log: "failed_notes.log"
+  max_retries: 3
+
+hugo:
+  base_url: "https://bluhuang.github.io/blogs-of-bluhuang/"
+  theme: "PaperMod"
+  config_file: "hugo.toml"
+
+deployment:
+  commit_message: "chore: auto-deploy blog update"
+  local_path: "."
