@@ -153,6 +153,24 @@ def _strip_title_prefix(title: str, config: dict) -> str:
     return title
 
 
+def _extract_first_h1(content: str) -> Optional[str]:
+    """Extract the first ATX heading ``# title`` from *content*.
+
+    Ignores YAML front matter (``--- … ---``) preceding the heading
+    and returns ``None`` when no heading is found.
+    """
+    text = content
+    # Strip leading YAML front matter if present
+    if text.startswith("---"):
+        end = text.find("---", 3)
+        if end != -1:
+            text = text[end + 3:]
+    m = re.search(r"^#\s+(.+)$", text, re.MULTILINE)
+    if m:
+        return m.group(1).strip()
+    return None
+
+
 def get_files_to_process(
     root_dir: str, cache_path: str
 ) -> Tuple[List[str], List[str]]:
@@ -290,9 +308,12 @@ def process_single_note(
     if processed.startswith("---"):
         processed = "\n" + processed
 
-    # 5. Prepend front matter with filename as title and date
-    title = os.path.splitext(os.path.basename(rel_path))[0]
-    title = _strip_title_prefix(title, config)
+    # 5. Prepend front matter with title and date
+    # Try to extract first H1 from processed content as title
+    title = _extract_first_h1(processed)
+    if not title:
+        title = os.path.splitext(os.path.basename(rel_path))[0]
+        title = _strip_title_prefix(title, config)
     lines = ["---", f"title: \"{title}\""]
 
     # Compute date: .file_times.json → local vault → Git commit
