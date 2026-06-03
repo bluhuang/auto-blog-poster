@@ -1,10 +1,13 @@
 import hashlib
 import json
 import os
+import re
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from modules.git_ops import get_file_first_commit_time
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
 
 
@@ -42,6 +45,9 @@ def compute_md5(file_path: str) -> str:
 def load_hash_cache(cache_path: str) -> Dict[str, str]:
     """Load the hash cache from a JSON file.
 
+    Supports both the old flat format (``{"path": "hash"}``) and the new
+    dict format (``{"path": {"hash": "…", "mtime": "…"}}``).
+
     Returns an empty dict if the file does not exist or is unreadable.
     The cache maps relative file paths (forward-slash) to their last-known MD5.
     """
@@ -50,7 +56,15 @@ def load_hash_cache(cache_path: str) -> Dict[str, str]:
         return {}
     try:
         with open(cache_path, "r", encoding="utf-8") as f:
-            cache: Dict[str, str] = json.load(f)
+            raw: Dict[str, Any] = json.load(f)
+        cache: Dict[str, str] = {}
+        for path, value in raw.items():
+            if isinstance(value, str):
+                cache[path] = value
+            elif isinstance(value, dict):
+                h = value.get("hash")
+                if h:
+                    cache[path] = h
         print(f"Loaded hash cache with {len(cache)} entries from {cache_path}")
         return cache
     except (json.JSONDecodeError, OSError) as e:
@@ -58,11 +72,81 @@ def load_hash_cache(cache_path: str) -> Dict[str, str]:
         return {}
 
 
-def save_hash_cache(cache_path: str, cache: Dict[str, str]) -> None:
-    """Persist the hash cache dict to a JSON file on disk."""
+def save_hash_cache(
+    cache_path: str, cache: Dict[str, str], mtimes: Optional[Dict[str, str]] = None
+) -> None:
+    """Persist the hash cache (and optional mtimes) to a JSON file on disk.
+
+    The saved format stores each path as ``{"hash": ..., "mtime": ...}``
+    to enable both old (str) and new (dict) readers.
+    """
+    payload: Dict[str, Dict[str, str]] = {}
+    for path, h in cache.items():
+        entry: Dict[str, str] = {"hash": h}
+        if mtimes and path in mtimes:
+            entry["mtime"] = mtimes[path]
+        payload[path] = entry
     with open(cache_path, "w", encoding="utf-8") as f:
-        json.dump(cache, f, indent=2)
+        json.dump(payload, f, indent=2, ensure_ascii=False)
     print(f"Saved hash cache with {len(cache)} entries to {cache_path}")
+
+
+def load_mtime_cache(cache_path: str) -> Dict[str, str]:
+    """Load mtime values from the hash cache file.
+
+    Handles both old (str values) and new (dict values) formats.
+    """
+    if not os.path.isfile(cache_path):
+        return {}
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        result: Dict[str, str] = {}
+        for path, value in raw.items():
+            if isinstance(value, dict):
+                mtime = value.get("mtime")
+                if mtime:
+                    result[path] = mtime
+        return result
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def get_local_file_time(
+    config: dict, rel_path: str
+) -> Optional[str]:
+    """Return the local file creation-time as an ISO-8601 string, or None.
+
+    Reads the vault path from ``OBSIDIAN_VAULT_PATH`` env var first,
+    then falls back to ``config.processing.local_vault_path``.
+    Returns ``None`` when the vault path is not set or the file does not
+    exist (caller should fall back to Git commit time).
+    """
+    vault = os.getenv("OBSIDIAN_VAULT_PATH") or ""
+    if not vault:
+        vault = config.get("processing", {}).get("local_vault_path", "")
+    if not vault or not os.path.isdir(vault):
+        return None
+
+    abs_path = os.path.join(vault, rel_path)
+    if not os.path.isfile(abs_path):
+        return None
+
+    try:
+        ts = os.path.getctime(abs_path)
+    except OSError:
+        ts = os.path.getmtime(abs_path)
+    dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
+    return dt.isoformat()
+
+
+def _strip_title_prefix(title: str, config: dict) -> str:
+    """Remove numeric prefix from title if configured."""
+    cfg = config.get("processing", {}).get("title_strip_prefix", {})
+    if cfg.get("enabled", False):
+        pattern = cfg.get("pattern", "^\\d+\\s*[-.]?\\s*")
+        return re.sub(pattern, "", title, count=1)
+    return title
 
 
 def get_files_to_process(
@@ -199,9 +283,27 @@ def process_single_note(
     if processed.startswith("---"):
         processed = "\n" + processed
 
-    # 5. Prepend front matter with filename as title
+    # 5. Prepend front matter with filename as title and date
     title = os.path.splitext(os.path.basename(rel_path))[0]
-    front_matter = f"---\ntitle: \"{title}\"\n---\n\n"
+    title = _strip_title_prefix(title, config)
+    lines = ["---", f"title: \"{title}\""]
+
+    # Compute date from local vault (preferred) or Git first commit
+    date_val = get_local_file_time(config, rel_path)
+    if date_val is None:
+        try:
+            source_repo_dir = config.get("_source_repo_dir", "")
+            if source_repo_dir:
+                repo_path = os.path.dirname(source_repo_dir)
+                file_rel = os.path.relpath(source_path, repo_path)
+                date_val = get_file_first_commit_time(repo_path, file_rel)
+        except Exception:
+            pass
+    if date_val:
+        lines.append(f"date: {date_val}")
+
+    lines.append("---")
+    front_matter = "\n".join(lines) + "\n\n"
     processed = front_matter + processed
 
     # 6. Write to Hugo content directory
@@ -238,7 +340,21 @@ def process_all_notes(
         deepseek_client_func: Callable ``(content: str, config: dict) -> str``.
         hash_cache_path: Path to the hash cache JSON file.
     """
-    to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
+    # Expose source repo path for Git-timestamp lookups
+    config["_source_repo_dir"] = source_root
+
+    processing_cfg = config.get("processing", {})
+    force = processing_cfg.get("force_reprocess_all", False)
+
+    if force:
+        print("force_reprocess_all = true: deleting cache and reprocessing all files")
+        if os.path.isfile(hash_cache_path):
+            os.remove(hash_cache_path)
+            print(f"  removed {hash_cache_path}")
+        to_process = scan_md_files(source_root)
+        to_delete: List[str] = []
+    else:
+        to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
 
     for rel_path in to_process:
         source_path = os.path.join(source_root, rel_path)
@@ -258,10 +374,30 @@ def process_all_notes(
                 os.remove(dest_path)
                 print(f"Deleted: {dest_path}")
 
+    # Build new cache and collect mtimes
     new_cache: Dict[str, str] = {}
+    mtimes: Dict[str, str] = {}
     for rel_path in scan_md_files(source_root):
         abs_path = os.path.join(source_root, rel_path)
         new_cache[rel_path] = compute_md5(abs_path)
-    save_hash_cache(hash_cache_path, new_cache)
+        mtime = get_local_file_time(config, rel_path)
+        if mtime:
+            mtimes[rel_path] = mtime
+    save_hash_cache(hash_cache_path, new_cache, mtimes)
+
+    # Reset force_reprocess_all so subsequent runs are incremental
+    if force:
+        processing_cfg["force_reprocess_all"] = False
+        _save_processing_config(config)
+        print("force_reprocess_all reset to false")
 
     print("Processing complete.")
+
+
+def _save_processing_config(config: dict, config_path: str = "config.yaml") -> None:
+    """Persist the in-memory config changes (e.g. force_reprocess_all) back
+    to the YAML file on disk."""
+    import yaml as _yaml
+    with open(config_path, "w", encoding="utf-8") as f:
+        _yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
+    print(f"Config written back to {config_path}")

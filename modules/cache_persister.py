@@ -46,7 +46,19 @@ def pull_cache(config: dict) -> None:
         if not os.path.exists(src):
             print(f"  (skip) {item}: not in cache branch")
             continue
-        if os.path.isdir(src):
+        if item == "content":
+            # Merge-copy: cache files overwrite local, but local-only files survive
+            if not os.path.isdir(dst):
+                os.makedirs(dst, exist_ok=True)
+            for root_dir, _dirs, files in os.walk(src):
+                rel_dir = os.path.relpath(root_dir, src)
+                target_dir = os.path.join(dst, rel_dir)
+                os.makedirs(target_dir, exist_ok=True)
+                for fname in files:
+                    s = os.path.join(root_dir, fname)
+                    d = os.path.join(target_dir, fname)
+                    shutil.copy2(s, d)
+        elif os.path.isdir(src):
             if os.path.isdir(dst):
                 shutil.rmtree(dst)
             shutil.copytree(src, dst)

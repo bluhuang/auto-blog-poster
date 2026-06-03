@@ -11,6 +11,11 @@ processing:
   image_download_dir: "static/images/"
   incremental: true
   cache_file: ".hash_cache.json"
+  local_vault_path: ""
+  force_reprocess_all: true
+  title_strip_prefix:
+    enabled: true
+    pattern: "^\\d+\\s*[-.]?\\s*"
   image_handling:
     enabled: true
     source_images_dir: ""
