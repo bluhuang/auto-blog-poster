@@ -7,8 +7,8 @@ hasCJKLanguage = true
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 
-[permalinks.page]
-  "pages" = "/:slugorcontentbasename/"
+[permalinks]
+  page = "/:section/:slug/"
 
 [pagination]
   disableAliases = false
