@@ -50,8 +50,11 @@ def pull_source_repo(config: dict) -> Path:
 
     print(f"Setting sparse-checkout to: {notes_subdir}")
     subprocess.run(
-        ["git", "-C", temp_dir, "sparse-checkout", "set", notes_subdir],
-        check=True,
+        [
+            "git", "-C", temp_dir, "sparse-checkout", "set",
+            notes_subdir, ".obsidian",
+        ],
+        check=False,
         timeout=30,
     )
 
@@ -123,3 +126,23 @@ def get_obsidian_attachment_config(repo_path: str) -> Optional[str]:
         return data.get("attachmentFolderPath")
     except (json.JSONDecodeError, OSError):
         return None
+
+
+def get_attachment_folder(repo_root: str, notes_subdir: str = "2 Notes") -> Optional[str]:
+    """Auto-detect Obsidian attachment folder from ``.obsidian/app.json``.
+
+    Tries the repo root first, then the notes subdirectory.
+
+    Args:
+        repo_root: Root of the cloned repository.
+        notes_subdir: Notes subdirectory name (default ``"2 Notes"``).
+
+    Returns:
+        The configured ``attachmentFolderPath`` value, or ``None``.
+    """
+    cfg = get_obsidian_attachment_config(repo_root)
+    if cfg is None:
+        cfg = get_obsidian_attachment_config(
+            os.path.join(repo_root, notes_subdir)
+        )
+    return cfg

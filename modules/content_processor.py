@@ -7,7 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from modules.git_ops import get_file_first_commit_time, get_obsidian_attachment_config
+from modules.git_ops import (
+    get_file_first_commit_time,
+    get_obsidian_attachment_config,
+    get_attachment_folder,
+)
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
 
 
@@ -425,7 +429,8 @@ def _build_wiki_lookup(source_root: str) -> List[dict]:
        - ``../assets``    → ``relative_subdir`` subdir ``../assets``
        - ``attachments/images`` → ``relative_subdir`` subdir ``attachments/images``
 
-    3. Fallback default: ``same_dir`` + ``relative_subdir`` subdir ``attachments``.
+    3. Fallback default: ``same_dir`` + ``relative_subdir`` subdir
+       ``attachments`` + ``relative_subdir`` subdir ``attachments/images``.
 
     Returns:
         Ordered list of lookup-strategy dicts.
@@ -436,11 +441,10 @@ def _build_wiki_lookup(source_root: str) -> List[dict]:
     # notes subdirectory).  Try the parent first, then fall back to
     # source_root directly in case the notes *are* the repo root.
     repo_root = os.path.dirname(source_root)
-    raw = get_obsidian_attachment_config(repo_root)
+    raw = get_attachment_folder(repo_root)
     if raw is None:
         raw = get_obsidian_attachment_config(source_root)
     if raw:
-        # Normalise: strip leading "./" but keep "../" as-is
         subdir = raw
         if subdir.startswith("./"):
             subdir = subdir[2:]
@@ -449,9 +453,11 @@ def _build_wiki_lookup(source_root: str) -> List[dict]:
                 {"type": "relative_subdir", "subdir": subdir}
             )
     else:
-        # Backward-compatible default
         strategies.append(
             {"type": "relative_subdir", "subdir": "attachments"}
+        )
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "attachments/images"}
         )
 
     return strategies
