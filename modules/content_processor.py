@@ -137,7 +137,7 @@ def get_local_file_time(
     except OSError:
         ts = os.path.getmtime(abs_path)
     dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-    return dt.isoformat()
+    return dt.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 def _strip_title_prefix(title: str, config: dict) -> str:

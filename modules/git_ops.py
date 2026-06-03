@@ -95,8 +95,9 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
     full_path = os.path.join(repo_path, file_rel_path)
     if os.path.isfile(full_path):
         ts = os.path.getmtime(full_path)
-        from datetime import datetime, timezone, timedelta
+        from datetime import datetime, timezone
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-        return dt.isoformat()
+        return dt.strftime("%Y-%m-%dT%H:%M:%S%z")
 
-    return datetime.now().astimezone().isoformat()
+    from datetime import datetime, timezone
+    return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
