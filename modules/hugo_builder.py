@@ -29,11 +29,11 @@ def build_site(config: dict) -> None:
             cmd,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=300,
         )
     except subprocess.TimeoutExpired as e:
         raise RuntimeError(
-            f"Hugo build timed out after 120 seconds"
+            f"Hugo build timed out after 300 seconds"
         ) from e
 
     if result.returncode != 0:

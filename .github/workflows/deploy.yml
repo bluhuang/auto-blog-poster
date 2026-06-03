@@ -16,6 +16,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache Hugo modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hugo_cache
+          key: hugo-modules-${{ hashFiles('go.mod', 'go.sum') }}
+          restore-keys: hugo-modules-
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -48,7 +55,8 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           set -o pipefail
-          python main.py 2>&1 | tee /tmp/auto_blog_output.log
+          mkdir -p public
+          python main.py 2>&1 | tee /tmp/auto_blog_output.log public/ci_log.txt
 
       - name: Upload auto-blog-poster log
         if: failure()
