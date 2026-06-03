@@ -8,7 +8,7 @@ logo_text = "BluHuang's Blog"
 navbar_fixed = true
 theme_switcher = true
 theme_default = "system"
-mainSections = ["ai", "coding", "database"]
+mainSections = ["AI", "coding", "database"]
 contact_form_action = "#"
 google_tag_manager = ""
 google_adsense = ""
@@ -33,7 +33,7 @@ exclude = []
 [search]
 enable = true
 primary_color = "#121212"
-include_sections = ["ai", "coding", "database"]
+include_sections = ["AI", "coding", "database"]
 show_image = true
 show_description = true
 show_tags = true
