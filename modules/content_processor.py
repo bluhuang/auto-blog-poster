@@ -288,8 +288,10 @@ def process_single_note(
     title = _strip_title_prefix(title, config)
     lines = ["---", f"title: \"{title}\""]
 
-    # Compute date from local vault (preferred) or Git first commit
-    date_val = get_local_file_time(config, rel_path)
+    # Compute date: .file_times.json → local vault → Git commit
+    date_val = _get_date_from_file_times(config, rel_path)
+    if date_val is None:
+        date_val = get_local_file_time(config, rel_path)
     if date_val is None:
         try:
             source_repo_dir = config.get("_source_repo_dir", "")
@@ -343,6 +345,9 @@ def process_all_notes(
     # Expose source repo path for Git-timestamp lookups
     config["_source_repo_dir"] = source_root
 
+    # Generate .file_times.json from local vault (no-op in CI)
+    _generate_file_times_cache(config)
+
     processing_cfg = config.get("processing", {})
     force = processing_cfg.get("force_reprocess_all", False)
 
@@ -392,6 +397,51 @@ def process_all_notes(
         print("force_reprocess_all reset to false")
 
     print("Processing complete.")
+
+
+_FILE_TIMES_PATH = ".file_times.json"
+
+
+def _get_date_from_file_times(config: dict, rel_path: str) -> Optional[str]:
+    """Read the creation date of a note from the cached ``.file_times.json``."""
+    if not os.path.isfile(_FILE_TIMES_PATH):
+        return None
+    try:
+        with open(_FILE_TIMES_PATH, "r", encoding="utf-8") as f:
+            times: Dict[str, str] = json.load(f)
+        return times.get(rel_path)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _generate_file_times_cache(config: dict) -> None:
+    """Scan the local vault (if accessible) and persist creation times for
+    all ``.md`` files as ``.file_times.json``.
+
+    This file is synced to the ``processed-cache`` branch so that CI
+    runs can use the same timestamps.
+    """
+    vault = os.getenv("OBSIDIAN_VAULT_PATH") or ""
+    if not vault:
+        vault = config.get("processing", {}).get("local_vault_path", "")
+    if not vault or not os.path.isdir(vault):
+        print("Local vault not found; skipping .file_times.json generation")
+        return
+
+    print(f"Generating .file_times.json from vault: {vault}")
+    times: Dict[str, str] = {}
+    for filepath in Path(vault).rglob("*.md"):
+        rel = filepath.relative_to(vault).as_posix()
+        try:
+            ts = filepath.stat().st_ctime
+        except OSError:
+            ts = filepath.stat().st_mtime
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
+        times[rel] = dt.strftime("%Y-%m-%d")
+
+    with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
+        json.dump(times, f, indent=2, ensure_ascii=False)
+    print(f"  Wrote {len(times)} entries to {_FILE_TIMES_PATH}")
 
 
 def _save_processing_config(config: dict, config_path: str = "config.yaml") -> None:

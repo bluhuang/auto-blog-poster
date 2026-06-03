@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 
-_ITEMS = ["content", "static/images", ".hash_cache.json"]
+_ITEMS = ["content", "static/images", ".hash_cache.json", ".file_times.json"]
 _CACHE_BRANCH = "processed-cache"
 
 
