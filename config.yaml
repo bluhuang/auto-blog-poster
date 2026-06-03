@@ -48,9 +48,6 @@ error:
 hugo:
   executable: "hugo"
   build_options: "--minify"
-  base_url: "https://bluhuang.github.io/blogs-of-bluhuang/"
-  theme: "PaperMod"
-  config_file: "hugo.toml"
 
 deployment:
   target_repo: "bluhuang/blogs-of-bluhuang"
