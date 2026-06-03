@@ -20,12 +20,10 @@ processing:
     enabled: true
     source_images_dir: ""
     target_static_dir: "static/images"
-    wiki_image_lookup:
-      - type: "same_dir"
-      - type: "relative_subdir"
-        subdir: "attachments"
-      - type: "relative_subdir"
-        subdir: "attachments/images"
+    # wiki_image_lookup:  # ← 可选覆盖，不配置则自动从 .obsidian/app.json 读取
+    #   - type: "same_dir"
+    #   - type: "relative_subdir"
+    #     subdir: "attachments"
   deepseek_api:
     model: "deepseek-v4-flash"
     temperature: 0.3
