@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from modules.git_ops import get_file_first_commit_time
+from modules.git_ops import get_file_first_commit_time, get_obsidian_attachment_config
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
 
 
@@ -243,7 +243,10 @@ def process_single_note(
     )
 
     if image_handling_enabled and raw_content.strip():
-        image_links = extract_image_links(raw_content, source_path, source_root, config)
+        wiki_lookup = config.get("_wiki_image_lookup")
+        image_links = extract_image_links(
+            raw_content, source_path, source_root, wiki_lookup
+        )
         replacements: List[Tuple[str, str]] = []
         for source_abs, target_rel, original_syntax in image_links:
             dest_path = os.path.join(target_static_dir, target_rel)
@@ -345,6 +348,13 @@ def process_all_notes(
     # Expose source repo path for Git-timestamp lookups
     config["_source_repo_dir"] = source_root
 
+    # Auto-detect wiki_image_lookup: explicit config takes priority;
+    # otherwise generate rules from .obsidian/app.json.
+    if "wiki_image_lookup" not in config.get("processing", {}).get("image_handling", {}):
+        config.setdefault("_wiki_image_lookup", _build_wiki_lookup(source_root))
+    else:
+        config["_wiki_image_lookup"] = config["processing"]["image_handling"]["wiki_image_lookup"]
+
     # Generate .file_times.json from local vault (no-op in CI)
     _generate_file_times_cache(config)
 
@@ -400,6 +410,51 @@ def process_all_notes(
 
 
 _FILE_TIMES_PATH = ".file_times.json"
+
+
+def _build_wiki_lookup(source_root: str) -> List[dict]:
+    """Build wiki image lookup rules from an Obsidian vault's attachment
+    configuration.
+
+    Priority of lookup rules:
+
+    1. ``same_dir`` — always added first.
+    2. From ``.obsidian/app.json`` ``attachmentFolderPath`` (if present):
+
+       - ``./attachments`` → ``relative_subdir`` subdir ``attachments``
+       - ``../assets``    → ``relative_subdir`` subdir ``../assets``
+       - ``attachments/images`` → ``relative_subdir`` subdir ``attachments/images``
+
+    3. Fallback default: ``same_dir`` + ``relative_subdir`` subdir ``attachments``.
+
+    Returns:
+        Ordered list of lookup-strategy dicts.
+    """
+    strategies: List[dict] = [{"type": "same_dir"}]
+
+    # The .obsidian/ directory lives in the repo root (one level above the
+    # notes subdirectory).  Try the parent first, then fall back to
+    # source_root directly in case the notes *are* the repo root.
+    repo_root = os.path.dirname(source_root)
+    raw = get_obsidian_attachment_config(repo_root)
+    if raw is None:
+        raw = get_obsidian_attachment_config(source_root)
+    if raw:
+        # Normalise: strip leading "./" but keep "../" as-is
+        subdir = raw
+        if subdir.startswith("./"):
+            subdir = subdir[2:]
+        if subdir:
+            strategies.append(
+                {"type": "relative_subdir", "subdir": subdir}
+            )
+    else:
+        # Backward-compatible default
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "attachments"}
+        )
+
+    return strategies
 
 
 def _get_date_from_file_times(config: dict, rel_path: str) -> Optional[str]:

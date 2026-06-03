@@ -1,7 +1,9 @@
+import json
 import os
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 
 def pull_source_repo(config: dict) -> Path:
@@ -100,3 +102,24 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
 
     from datetime import datetime, timezone
     return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d")
+
+
+def get_obsidian_attachment_config(repo_path: str) -> Optional[str]:
+    """Read the ``attachmentFolderPath`` from ``.obsidian/app.json``.
+
+    Args:
+        repo_path: Root of the cloned Obsidian repository (contains ``.obsidian/``).
+
+    Returns:
+        The configured path (e.g. ``"./attachments"``) or ``None`` if
+        the file / key does not exist.
+    """
+    app_json = os.path.join(repo_path, ".obsidian", "app.json")
+    if not os.path.isfile(app_json):
+        return None
+    try:
+        with open(app_json, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("attachmentFolderPath")
+    except (json.JSONDecodeError, OSError):
+        return None
