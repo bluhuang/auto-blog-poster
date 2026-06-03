@@ -409,7 +409,15 @@ def _get_date_from_file_times(config: dict, rel_path: str) -> Optional[str]:
     try:
         with open(_FILE_TIMES_PATH, "r", encoding="utf-8") as f:
             times: Dict[str, str] = json.load(f)
-        return times.get(rel_path)
+        # .file_times.json uses paths relative to the vault root, but
+        # rel_path is relative to source_root (e.g. "2 Notes/…").
+        # Try with the notes_subdir prefix first.
+        notes_subdir = config.get("source", {}).get("notes_subdir", "")
+        for candidate in (rel_path, os.path.join(notes_subdir, rel_path)):
+            val = times.get(candidate)
+            if val:
+                return val
+        return None
     except (json.JSONDecodeError, OSError):
         return None
 
