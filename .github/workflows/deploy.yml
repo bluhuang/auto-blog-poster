@@ -62,6 +62,22 @@ jobs:
           mkdir -p public
           python main.py 2>&1 | tee /tmp/auto_blog_output.log public/ci_log.txt
 
+      - name: Count notes (source vs generated)
+        shell: bash
+        run: |
+      - name: Count notes (source vs generated)
+        shell: bash
+        run: |
+          SRC=$(find .temp/source_repo/2\ Notes -name "*.md" 2>/dev/null | wc -l)
+          GEN=$(find content -name "*.md" 2>/dev/null | wc -l)
+          echo "Source notes: $SRC"
+          echo "Generated content files: $GEN"
+          if [ "$SRC" -ne "$GEN" ]; then
+            echo "::warning title=Notes count mismatch::Source has $SRC files, generated has $GEN files"
+          else
+            echo "::notice title=Notes count OK::$SRC source → $GEN generated"
+          fi
+
       - name: Upload auto-blog-poster log
         if: failure()
         uses: actions/upload-artifact@v4
