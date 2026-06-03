@@ -520,3 +520,87 @@ def _save_processing_config(config: dict, config_path: str = "config.yaml") -> N
     with open(config_path, "w", encoding="utf-8") as f:
         _yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
     print(f"Config written back to {config_path}")
+
+
+def _to_slug(text: str) -> str:
+    text = re.sub(r"[^\w\s\u4e00-\u9fff\-]", "", text)
+    text = re.sub(r"[\s_]+", "-", text.strip())
+    return text.lower()
+
+
+def generate_navigation_json(content_dir: str = "content") -> None:
+    """Scan the ``content/`` directory and write a tree-structured JSON
+    to ``static/navigation.json`` for the sidebar tree navigation.
+
+    The JSON structure:
+    ::
+
+        [
+          {
+            "title": "AI",
+            "url": "/ai/",
+            "children": [
+              {
+                "title": "0 基础",
+                "children": [
+                  { "title": "1 Agent基础必知必会", "url": "/ai/1-agent基础必知必会/" },
+                  …
+                ]
+              },
+              { "title": "link", "url": "/ai/link/" }
+            ]
+          },
+          …
+        ]
+    """
+    root = Path(content_dir)
+    tree = _build_tree(root)
+    nav_path = Path("static/navigation.json")
+    nav_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(nav_path, "w", encoding="utf-8") as f:
+        json.dump(tree, f, indent=2, ensure_ascii=False)
+    print(f"Wrote navigation tree ({_count_nodes(tree)} nodes) to {nav_path}")
+
+
+def _build_tree(dir_path: Path) -> list:
+    """Recursively build a navigation tree for *dir_path*."""
+    nodes: list = []
+    entries = sorted(dir_path.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+    for entry in entries:
+        if entry.name.startswith("."):
+            continue
+        if entry.is_dir():
+            children = _build_tree(entry)
+            node: dict = {"title": entry.name}
+            section = _get_section(entry)
+            if section:
+                node["url"] = f"/{section}/"
+            if children:
+                node["children"] = children
+            if children or section:
+                nodes.append(node)
+        elif entry.suffix == ".md" and entry.name not in ("_index.md", "about.md"):
+            name = entry.stem
+            slug = _to_slug(name)
+            section = _get_section(entry)
+            url = f"/{section}/{slug}/" if section else f"/{slug}/"
+            nodes.append({"title": name, "url": url})
+    return nodes
+
+
+def _get_section(path: Path) -> str:
+    """Return the first content-directory segment for *path*, e.g. ``"AI"``
+    for ``content/AI/0 基础/…``."""
+    parts = path.relative_to("content").parts
+    return parts[0] if parts else ""
+
+
+def _count_nodes(nodes: list) -> int:
+    """Count all leaf (url-carrying) nodes recursively."""
+    count = 0
+    for node in nodes:
+        if "url" in node:
+            count += 1
+        if "children" in node:
+            count += _count_nodes(node["children"])
+    return count

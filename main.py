@@ -70,6 +70,14 @@ def main() -> None:
         print(f"FATAL: Content processing failed: {e}")
         sys.exit(1)
 
+    # ── Step 3b: Generate navigation tree ───────────────────────────
+    print()
+    print("[3b/6] Generating navigation tree ...")
+    try:
+        content_processor.generate_navigation_json()
+    except Exception as e:
+        print(f"WARNING: Navigation tree generation failed: {e}")
+
     # ── Step 4: Build Hugo site ────────────────────────────────────
     print()
     print("[4/6] Building Hugo site ...")
