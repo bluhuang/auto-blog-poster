@@ -48,6 +48,10 @@ jobs:
           hugo-version: "0.162.1"
           extended: true
 
+      - name: Pre-download Hugo modules
+        run: hugo mod graph
+        timeout-minutes: 10
+
       - name: Run auto-blog-poster
         shell: bash
         env:
