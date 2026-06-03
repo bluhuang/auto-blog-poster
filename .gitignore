@@ -3,6 +3,7 @@ resources/
 .temp/
 .env
 __pycache__/
+node_modules/
 *.py[cod]
 .hash_cache.json
 failed_notes.log
