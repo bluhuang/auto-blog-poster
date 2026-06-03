@@ -1,0 +1,22 @@
+{{ define "main" }}
+  <section class="section">
+    <div class="container">
+      <div class="row gx-5">
+        <div class="lg:col-8">
+          <div class="row">
+            {{ $paginator := .Paginate (where .Site.RegularPages "Section" "in" (slice "AI" "coding" "database")) }}
+            {{ range $paginator.Pages }}
+              <div class="md:col-6 mb-14">
+                {{ partial "components/blog-card" . }}
+              </div>
+            {{ end }}
+          </div>
+          {{ partial "components/pagination.html" . }}
+        </div>
+        <div class="lg:col-4">
+          {{ partialCached "widgets/widget-wrapper" (dict "Widgets" site.Params.widgets.sidebar "Scope" . ) }}
+        </div>
+      </div>
+    </div>
+  </section>
+{{ end }}
