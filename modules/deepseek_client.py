@@ -46,9 +46,10 @@ def call_deepseek(content: str, config: dict) -> str:
         "请处理以下内容：\n\n{content}",
     )
 
-    system_prompt = (
+    system_prompt = deepseek_cfg.get(
+        "system_prompt",
         "你是一个专业的博客编辑器。"
-        "不要修改任何图片链接语法，保持 ![alt](url) 和 ![[filename]] 格式原样。"
+        "不要修改任何图片链接语法，保持 ![alt](url) 和 ![[filename]] 格式原样。",
     )
     user_message = prompt_template.replace("{content}", content)
 
