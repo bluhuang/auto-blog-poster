@@ -2,3 +2,7 @@ baseURL = "https://bluhuang.github.io/blogs-of-bluhuang/"
 languageCode = "zh-cn"
 title = "BluHuang's Blog"
 theme = "newsroom"
+
+[params]
+  mainSections = ["ai", "coding", "database"]
+  blogDir = "ai"
