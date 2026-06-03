@@ -85,10 +85,9 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
             lines = result.stdout.strip().splitlines()
             raw = lines[0].strip()
             # Convert "2025-01-15 10:30:00 +0800" → "2025-01-15T10:30:00+08:00"
-            date_part, tz = raw.rsplit(" ", 1)
-            tz = tz.replace(" ", "").zfill(6)
-            tz = tz[:3] + ":" + tz[3:]
-            return f"{date_part.replace(' ', 'T')}{tz}"
+            # git log --format=%ai outputs: "2026-06-03 10:30:00 +0000"
+            date_part = raw.strip().split(" ")[0]  # just "2026-06-03"
+            return date_part
     except (subprocess.SubprocessError, OSError):
         pass
 
@@ -97,7 +96,7 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
         ts = os.path.getmtime(full_path)
         from datetime import datetime, timezone
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-        return dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+        return dt.strftime("%Y-%m-%d")
 
     from datetime import datetime, timezone
-    return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+    return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d")
