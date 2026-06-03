@@ -1,0 +1,5 @@
+[en]
+  label = "En"
+  locale = "en-us"
+  contentDir = "content"
+  weight = 1

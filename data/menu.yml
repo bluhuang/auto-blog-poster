@@ -1,9 +1,0 @@
-main:
-  - item: About
-    url: about/
-  - item: Blog
-    url: ""
-  # - item: Category            # 暂隐藏，待实现自动分类后再恢复
-  #   url: categories
-  # - item: Tag                  # 暂隐藏
-  #   url: tags

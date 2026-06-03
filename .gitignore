@@ -8,5 +8,6 @@ __pycache__/
 failed_notes.log
 .DS_Store
 *.log
+.hugo_build.lock
 .idea/
 .vscode/

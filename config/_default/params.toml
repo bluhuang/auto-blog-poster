@@ -1,0 +1,83 @@
+favicon = "images/favicon.png"
+logo = "images/logo.png"
+logo_darkmode = "images/logo-darkmode.png"
+logo_width = "160px"
+logo_height = "32px"
+logo_webp = true
+logo_text = "BluHuang's Blog"
+navbar_fixed = true
+theme_switcher = true
+theme_default = "system"
+mainSections = ["ai", "coding", "database"]
+contact_form_action = "#"
+google_tag_manager = ""
+google_adsense = ""
+custom_script = ""
+copyright = "Powered by [Hugo](https://gohugo.io) & [Hugoplate](https://github.com/zeon-studio/hugoplate)"
+
+[preloader]
+enable = false
+preloader = ""
+
+[navigation_button]
+enable = false
+label = ""
+link = ""
+
+[llms]
+generate_llms_txt = false
+generate_llms_full_txt = false
+include = []
+exclude = []
+
+[search]
+enable = true
+primary_color = "#121212"
+include_sections = ["ai", "coding", "database"]
+show_image = true
+show_description = true
+show_tags = true
+show_categories = true
+
+[announcement]
+enable = false
+expire_days = 7
+content = ""
+
+[metadata]
+keywords = ["blog", "BluHuang", "tech"]
+description = "BluHuang's personal tech blog"
+author = "BluHuang"
+twitter = ""
+image = "images/og-image.png"
+
+[site_verification]
+google = ""
+bing = ""
+baidu = ""
+facebook = ""
+mastodon = ""
+
+[cookies]
+enable = false
+expire_days = 60
+content = "This site uses cookies."
+button = "I Accept"
+
+[mermaid]
+js_url = 'https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.esm.min.mjs'
+
+[widgets]
+sidebar = ["categories", "tags"]
+
+[google_map]
+enable = false
+map_api_key = ""
+map_latitude = "51.5223477"
+map_longitude = "-0.1622023"
+map_marker = "images/marker.png"
+
+[subscription]
+enable = false
+mailchimp_form_action = ""
+mailchimp_form_name = ""
