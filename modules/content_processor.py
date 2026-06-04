@@ -437,6 +437,10 @@ def process_all_notes(
                 os.remove(dest_path)
                 print(f"Deleted: {dest_path}")
 
+    # Ensure every content subdirectory has an _index.md so Hugo treats
+    # them as proper sections (needed for tree-nav recursion).
+    _ensure_section_indexes(content_dir)
+
     # Build new cache and collect mtimes
     new_cache: Dict[str, str] = {}
     mtimes: Dict[str, str] = {}
@@ -455,6 +459,25 @@ def process_all_notes(
         print("force_reprocess_all reset to false")
 
     print("Processing complete.")
+
+
+def _ensure_section_indexes(content_dir: str) -> None:
+    """Walk the Hugo content directory and create ``_index.md`` for any
+    subdirectory that lacks one.
+
+    This ensures Hugo treats nested directories as proper *sections*,
+    which is required for the recursive tree-nav partial to work.
+    """
+    for root, dirs, _files in os.walk(content_dir):
+        # Skip the content root itself (it already has _index.md)
+        if root == content_dir:
+            continue
+        indexPath = os.path.join(root, "_index.md")
+        if not os.path.isfile(indexPath):
+            section_name = os.path.basename(root)
+            with open(indexPath, "w", encoding="utf-8") as f:
+                f.write(f"---\ntitle: \"{section_name}\"\n---\n")
+            print(f"  [section] created _index.md for {os.path.relpath(root, content_dir)}")
 
 
 _FILE_TIMES_PATH = ".file_times.json"
