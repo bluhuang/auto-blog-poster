@@ -24,7 +24,7 @@ defaultContentLanguageInSubdir = false
   target = "css"
 
 [outputs]
-  home = ["HTML", "RSS", "WebAppManifest"]
+  home = ["HTML", "RSS", "WebAppManifest", "SearchIndex"]
   page = ["HTML", "RSS"]
   section = ["HTML", "RSS"]
   taxonomy = ["HTML", "RSS"]
