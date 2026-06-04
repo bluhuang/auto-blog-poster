@@ -8,31 +8,36 @@
     page — the current page context (for highlighting / open-state)
     node — the section whose children to render at this recursion level
 */}}
+{{ $excludedSections := slice "about" "guestbook" "blogs" }}
 <ul class="space-y-0.5 text-sm">
   {{ range .node.Sections }}
-    {{ $isAncestor := $.page.IsDescendant . }}
-    <li>
-      {{ if .Sections }}
-        <details{{ if $isAncestor }} open{{ end }}>
-          <summary class="cursor-pointer flex items-center py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light group">
-            <span class="mr-1.5 text-xs transition-transform group-open:rotate-90">&#9654;</span>
-            <a href="{{ .RelPermalink }}" class="flex-1 hover:underline truncate">{{ .Title }}</a>
-          </summary>
-          {{ partial "tree-nav" (dict "page" $.page "node" .) }}
-        </details>
-      {{ else }}
-        <a href="{{ .RelPermalink }}" class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate">{{ .Title }}</a>
-      {{ end }}
-    </li>
+    {{ if not (in $excludedSections .Section) }}
+      {{ $isAncestor := $.page.IsDescendant . }}
+      <li>
+        {{ if .Sections }}
+          <details{{ if $isAncestor }} open{{ end }}>
+            <summary class="cursor-pointer flex items-center py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light group">
+              <span class="mr-1.5 text-xs transition-transform group-open:rotate-90">&#9654;</span>
+              <a href="{{ .RelPermalink }}" class="flex-1 hover:underline truncate">{{ .Title }}</a>
+            </summary>
+            {{ partial "tree-nav" (dict "page" $.page "node" .) }}
+          </details>
+        {{ else }}
+          <a href="{{ .RelPermalink }}" class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate">{{ .Title }}</a>
+        {{ end }}
+      </li>
+    {{ end }}
   {{ end }}
   {{ range .node.RegularPages }}
-    {{ $isActive := eq . $.page }}
-    <li>
-      <a href="{{ .RelPermalink }}"
-         class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate
-                {{ if $isActive }}text-primary font-medium{{ end }}">
-        {{ .Title }}
-      </a>
-    </li>
+    {{ if not (in $excludedSections .Section) }}
+      {{ $isActive := eq . $.page }}
+      <li>
+        <a href="{{ .RelPermalink }}"
+           class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate
+                  {{ if $isActive }}text-primary font-medium{{ end }}">
+          {{ .Title }}
+        </a>
+      </li>
+    {{ end }}
   {{ end }}
 </ul>
