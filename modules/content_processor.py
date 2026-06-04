@@ -449,8 +449,8 @@ def process_all_notes(
             print(f"ERROR: Failed to process {rel_path}, aborting.")
             raise
 
+    content_dir = config.get("output", {}).get("content_dir", "content")
     if to_delete:
-        content_dir = config.get("output", {}).get("content_dir", "content")
         for rel_path in to_delete:
             dest_path = os.path.join(content_dir, rel_path)
             if os.path.isfile(dest_path):
