@@ -21,7 +21,7 @@
               <a href="{{ .RelPermalink }}" class="text-sm text-primary hover:underline">查看更多 →</a>
             </div>
             <div class="grid md:grid-cols-3 gap-6">
-              {{ range first 6 .RegularPages }}
+              {{ range first 6 .RegularPagesRecursive.ByDate.Reverse }}
                 {{ partial "components/blog-card" . }}
               {{ end }}
             </div>
