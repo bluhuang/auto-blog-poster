@@ -13,6 +13,7 @@ processing:
   cache_file: ".hash_cache.json"
   local_vault_path: ""
   force_reprocess_all: true
+  title_source: "filename"   # "filename" 或 "h1" — 默认使用文件名（去除序号），h1 则从内容提取第一个 # 标题
   title_strip_prefix:
     enabled: true
     pattern: "^\\d+\\s*[-.]?\\s*"
