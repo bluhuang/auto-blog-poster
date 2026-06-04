@@ -46,7 +46,7 @@ def pull_cache(config: dict) -> None:
         if not os.path.exists(src):
             print(f"  (skip) {item}: not in cache branch")
             continue
-        if item == "content":
+        if item in ("content", "static/images"):
             # Merge-copy: cache files overwrite local, but local-only files survive
             if not os.path.isdir(dst):
                 os.makedirs(dst, exist_ok=True)
