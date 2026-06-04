@@ -1,6 +1,27 @@
 public/
 resources/
 .temp/
+# Generated blog content (separately persisted to processed-cache branch)
+content/AI/
+content/coding/
+content/database/
+content/design_mode/
+content/language/
+content/net_theories/
+content/os_theories/
+content/paper*/
+content/z_efficiency/
+content/z_mixed/
+static/images/AI/
+static/images/coding/
+static/images/database/
+static/images/design_mode/
+static/images/language/
+static/images/net_theories/
+static/images/os_theories/
+static/images/paper*/
+static/images/z_efficiency/
+static/images/z_mixed/
 .env
 __pycache__/
 node_modules/
