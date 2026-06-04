@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shutil
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -284,7 +285,7 @@ def process_single_note(
             else:
                 print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
             replacements.append(
-                (original_syntax, f"![](/{target_rel})")
+                (original_syntax, f"![](/{urllib.parse.quote(target_rel)})")
             )
 
         if replacements:
