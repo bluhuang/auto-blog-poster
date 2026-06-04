@@ -33,7 +33,7 @@ processing:
     target_static_dir: static
   image_processing: true
   incremental: true
-  local_vault_path: ''
+  local_vault_path: '/Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu obsidian'
   title_source: filename
   title_strip_prefix:
     enabled: true

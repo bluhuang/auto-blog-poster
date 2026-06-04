@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
@@ -40,12 +41,24 @@ def main() -> None:
 
     # ── Step 1: Pull source notes ──────────────────────────────────
     print()
-    print("[1/6] Pulling source notes repository ...")
-    try:
-        notes_root = git_ops.pull_source_repo(config)
-    except Exception as e:
-        print(f"FATAL: Failed to pull source repo: {e}")
-        sys.exit(1)
+    local_vault = config.get("processing", {}).get("local_vault_path", "")
+    if local_vault and os.path.isdir(local_vault):
+        notes_subdir = config.get("source", {}).get("notes_subdir", "")
+        vault_notes = os.path.join(local_vault, notes_subdir)
+        if os.path.isdir(vault_notes):
+            print(f"[1/6] Using local vault: {vault_notes}")
+            notes_root = Path(vault_notes)
+            config["_source_repo_dir"] = local_vault
+        else:
+            print(f"WARNING: vault notes dir not found at {vault_notes}, falling back to git clone")
+            notes_root = git_ops.pull_source_repo(config)
+    else:
+        print("[1/6] Pulling source notes repository ...")
+        try:
+            notes_root = git_ops.pull_source_repo(config)
+        except Exception as e:
+            print(f"FATAL: Failed to pull source repo: {e}")
+            sys.exit(1)
 
     # ── Step 2: Restore cache from previous run ─────────────────────
     print()
