@@ -230,9 +230,12 @@ def process_single_note(
 
     1. Read raw content from the source file.
     2. Extract image links (wiki-style and Markdown), copy images to the
-       ``static/`` directory, and replace links with Hugo-compatible URLs.
-    3. Send the transformed content to the DeepSeek API.
-    4. Write the API response to ``config.output.content_dir``, preserving
+       ``static/`` directory, and build a replacement map.
+    3. Replace wiki image syntax (``![[...]]``) with inert placeholders
+       (``<!--IMG_N-->``) so DeepSeek will not mangle the URLs.
+    4. Send the placeholder-protected content to the DeepSeek API.
+    5. Restore the actual ``![](/images/...)`` links from placeholders.
+    6. Write the final content to ``config.output.content_dir``, preserving
        the relative path structure of the original note.
 
     Args:
@@ -270,8 +273,11 @@ def process_single_note(
         image_links = extract_image_links(
             raw_content, source_path, source_root, wiki_lookup
         )
-        replacements: List[Tuple[str, str]] = []
-        for source_abs, target_rel, original_syntax in image_links:
+        replacements: Dict[str, str] = {}
+        placeholder_map: Dict[str, str] = {}
+        for idx, (source_abs, target_rel, original_syntax) in enumerate(
+            image_links
+        ):
             dest_path = os.path.join(target_static_dir, target_rel)
             if not os.path.isfile(dest_path):
                 os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
@@ -284,19 +290,23 @@ def process_single_note(
                     ) from e
             else:
                 print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
-            replacements.append(
-                (original_syntax, f"![](/{urllib.parse.quote(target_rel)})")
+            replacements[original_syntax] = (
+                f"![](/{urllib.parse.quote(target_rel)})"
             )
+            placeholder_map[original_syntax] = f"<!--IMG_{idx}-->"
 
         if replacements:
-            content_to_send = convert_markdown_links(raw_content, replacements)
-            print(f"  [image] replaced {len(replacements)} link(s)")
+            # Protect wiki links with placeholders before calling API
+            content_to_send = raw_content
+            for old_syntax, placeholder in placeholder_map.items():
+                content_to_send = content_to_send.replace(old_syntax, placeholder)
+            print(f"  [image] protected {len(replacements)} link(s) with placeholders")
         else:
             content_to_send = raw_content
     else:
         content_to_send = raw_content
 
-    # 3. Call DeepSeek API
+    # 3. Call DeepSeek API (with placeholder-protected content)
     processed = deepseek_client_func(content_to_send, config)
     if not processed:
         print(
@@ -305,11 +315,18 @@ def process_single_note(
         )
         processed = content_to_send
 
-    # 4. Safeguard against Hugo YAML frontmatter mis-parsing
+    # 4. Restore image placeholders back to actual Markdown links
+    if replacements:
+        inverse_map = {v: k for k, v in placeholder_map.items()}
+        for placeholder, new_url in inverse_map.items():
+            processed = processed.replace(placeholder, new_url)
+        print(f"  [image] restored {len(replacements)} link(s) from placeholders")
+
+    # 5. Safeguard against Hugo YAML frontmatter mis-parsing
     if processed.startswith("---"):
         processed = "\n" + processed
 
-    # 5. Prepend front matter with title and date
+    # 6. Prepend front matter with title and date
     # 根据配置决定标题来源: "filename" (默认) 或 "h1"
     title = ""
     title_source = config.get("processing", {}).get("title_source", "filename")
