@@ -10,7 +10,7 @@
         </div>
         <div class="lg:col-9">
           <div class="grid md:grid-cols-2 gap-6">
-            {{ range (where .Pages "Kind" "page").ByDate.Reverse }}
+            {{ range .RegularPagesRecursive.ByDate.Reverse }}
               {{ partial "components/blog-card" . }}
             {{ end }}
           </div>
