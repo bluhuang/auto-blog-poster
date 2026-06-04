@@ -615,9 +615,9 @@ def _generate_file_times_cache(config: dict) -> None:
     for filepath in Path(vault).rglob("*.md"):
         rel = filepath.relative_to(vault).as_posix()
         try:
-            ts = filepath.stat().st_ctime
-        except OSError:
             ts = filepath.stat().st_mtime
+        except OSError:
+            ts = filepath.stat().st_ctime
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
         times[rel] = dt.strftime("%Y-%m-%d")
 
