@@ -48,7 +48,7 @@ def pull_source_repo(config: dict) -> Path:
         timeout=120,
     )
 
-    print(f"Setting sparse-checkout to: {notes_subdir}")
+    print(f"Setting sparse-checkout to: {notes_subdir}, .obsidian")
     subprocess.run(
         [
             "git", "-C", temp_dir, "sparse-checkout", "set",
@@ -57,6 +57,20 @@ def pull_source_repo(config: dict) -> Path:
         check=False,
         timeout=30,
     )
+
+    # Also include the source images directory if configured
+    source_images = (
+        config.get("processing", {})
+        .get("image_handling", {})
+        .get("source_images_dir", "")
+    )
+    if source_images:
+        print(f"  Adding to sparse-checkout: {source_images}")
+        subprocess.run(
+            ["git", "-C", temp_dir, "sparse-checkout", "add", source_images],
+            check=False,
+            timeout=30,
+        )
 
     notes_path = os.path.join(temp_dir, notes_subdir)
     if not os.path.isdir(notes_path):
