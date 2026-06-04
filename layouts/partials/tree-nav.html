@@ -29,7 +29,14 @@
     {{ end }}
   {{ end }}
   {{ range .node.RegularPages }}
-    {{ if not (in $excludedSections .Section) }}
+    {{ $pageSection := .Section }}
+    {{ if not $pageSection }}
+      {{ $pageSection = path.Base (path.Dir .File.Path) }}
+      {{ if or (eq $pageSection ".") (not $pageSection) }}
+        {{ $pageSection = strings.TrimSuffix ".md" .File.Path }}
+      {{ end }}
+    {{ end }}
+    {{ if not (in $excludedSections $pageSection) }}
       {{ $isActive := eq . $.page }}
       <li>
         <a href="{{ .RelPermalink }}"
