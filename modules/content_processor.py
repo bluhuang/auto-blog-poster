@@ -317,9 +317,8 @@ def process_single_note(
 
     # 4. Restore image placeholders back to actual Markdown links
     if replacements:
-        inverse_map = {v: k for k, v in placeholder_map.items()}
-        for placeholder, new_url in inverse_map.items():
-            processed = processed.replace(placeholder, new_url)
+        for placeholder, original_syntax in placeholder_map.items():
+            processed = processed.replace(placeholder, replacements.get(original_syntax, original_syntax))
         print(f"  [image] restored {len(replacements)} link(s) from placeholders")
 
     # 5. Safeguard against Hugo YAML frontmatter mis-parsing
