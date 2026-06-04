@@ -646,10 +646,12 @@ def _generate_file_times_cache(config: dict) -> None:
 
 def _save_processing_config(config: dict, config_path: str = "config.yaml") -> None:
     """Persist the in-memory config changes (e.g. force_reprocess_all) back
-    to the YAML file on disk."""
+    to the YAML file on disk. Internal keys (prefixed with ``_``) are
+    stripped before serialisation."""
     import yaml as _yaml
+    clean = {k: v for k, v in config.items() if not k.startswith("_")}
     with open(config_path, "w", encoding="utf-8") as f:
-        _yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
+        _yaml.dump(clean, f, default_flow_style=False, allow_unicode=True)
     print(f"Config written back to {config_path}")
 
 
