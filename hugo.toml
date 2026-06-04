@@ -2,7 +2,7 @@ baseURL = "https://bluhuang.github.io/blogs-of-bluhuang/"
 title = "BluHuang's Blog"
 theme = "hugoplate"
 timeZone = "Asia/Shanghai"
-summaryLength = 10
+summaryLength = 50
 hasCJKLanguage = true
 enableGitInfo = true
 defaultContentLanguage = "en"
@@ -84,6 +84,10 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "plugins/font-awesome/v6/icons.css"
   lazy = true
+
+# Custom styles for blog cards
+[[params.plugins.css]]
+  link = "css/custom.css"
 
 # KaTeX
 [[params.plugins.css]]
