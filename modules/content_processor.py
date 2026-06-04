@@ -337,6 +337,26 @@ def process_single_note(
         title = _strip_title_prefix(title, config)
     lines = ["---", f"title: \"{title}\""]
 
+    # Image: first extracted image URL
+    first_image_url = ""
+    if replacements:
+        first_url = next(iter(replacements.values()))
+        m = re.match(r"!\[.*?\]\((/[^)]+)\)", first_url)
+        if m:
+            first_image_url = m.group(1)
+    if first_image_url:
+        lines.append(f"image: \"{first_image_url}\"")
+
+    # Categories: top-level directory from note path
+    path_parts = rel_path.split(os.sep)
+    if len(path_parts) > 1:
+        lines.append(f"categories: {json.dumps([path_parts[0]], ensure_ascii=False)}")
+
+    # Author: config → default
+    author = config.get("processing", {}).get("default_author", "BluHuang")
+    if author:
+        lines.append(f"author: \"{author}\"")
+
     # Compute date: .file_times.json → local vault → Git commit
     date_val = _get_date_from_file_times(config, rel_path)
     if date_val is None:
