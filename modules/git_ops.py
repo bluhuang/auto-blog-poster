@@ -106,10 +106,13 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
         if result.returncode == 0 and result.stdout.strip():
             lines = result.stdout.strip().splitlines()
             raw = lines[0].strip()
-            # Convert "2025-01-15 10:30:00 +0800" → "2025-01-15T10:30:00+08:00"
             # git log --format=%ai outputs: "2026-06-03 10:30:00 +0000"
-            date_part = raw.strip().split(" ")[0]  # just "2026-06-03"
-            return date_part
+            # Convert to ISO-8601: "2026-06-03T10:30:00+0000"
+            parts = raw.strip().split()
+            if len(parts) >= 3:
+                tz = parts[2].replace(":", "")
+                return f"{parts[0]}T{parts[1]}{tz}"
+            return raw.strip().split(" ")[0]
     except (subprocess.SubprocessError, OSError):
         pass
 
@@ -118,10 +121,10 @@ def get_file_first_commit_time(repo_path: str, file_rel_path: str) -> str:
         ts = os.path.getmtime(full_path)
         from datetime import datetime, timezone
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-        return dt.strftime("%Y-%m-%d")
+        return dt.strftime("%Y-%m-%dT%H:%M:%S%z")
 
     from datetime import datetime, timezone
-    return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d")
+    return datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 def get_obsidian_attachment_config(repo_path: str) -> Optional[str]:

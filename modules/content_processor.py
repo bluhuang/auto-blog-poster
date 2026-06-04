@@ -142,7 +142,7 @@ def get_local_file_time(
     except OSError:
         ts = os.path.getmtime(abs_path)
     dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-    return dt.strftime("%Y-%m-%d")
+    return dt.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 def _strip_title_prefix(title: str, config: dict) -> str:
@@ -386,7 +386,7 @@ def process_single_note(
     except Exception:
         pass
     if date_val is None:
-        date_val = datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d")
+        date_val = datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
     if mtime_val is None:
         mtime_val = date_val
     lines.append(f"date: {date_val}")
@@ -637,7 +637,7 @@ def _generate_file_times_cache(config: dict) -> None:
         except OSError:
             ts = filepath.stat().st_ctime
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-        times[rel] = dt.strftime("%Y-%m-%d")
+        times[rel] = dt.strftime("%Y-%m-%dT%H:%M:%S%z")
 
     with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
         json.dump(times, f, indent=2, ensure_ascii=False)
