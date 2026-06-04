@@ -1,33 +1,44 @@
-{{/*
-  Recursive tree navigation partial.
-
-  Usage:
-    {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
-
-  Parameters:
-    page — the current page context (for highlighting / open-state)
-    node — the section whose children to render at this recursion level
-*/}}
 {{ $excludedSections := slice "about" "guestbook" "blogs" }}
-<ul class="space-y-0.5 text-sm">
+
+{{ $depth := .depth | default 0 }}
+{{ $containerClass := "" }}
+{{ if eq $depth 0 }}
+  {{ $containerClass = "space-y-0.5 text-sm" }}
+{{ end }}
+
+<ul class="{{ $containerClass }}" style="padding-left: {{ mul $depth 12 }}px;">
   {{ range .node.Sections }}
     {{ if not (in $excludedSections .Section) }}
       {{ $isAncestor := $.page.IsDescendant . }}
+      {{ $isActive := eq . $.page }}
+      {{ $pageCount := len .RegularPagesRecursive }}
       <li>
         {{ if .Sections }}
           <details{{ if $isAncestor }} open{{ end }}>
-            <summary class="cursor-pointer flex items-center py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light group">
-              <span class="mr-1.5 text-xs transition-transform group-open:rotate-90">&#9654;</span>
-              <a href="{{ .RelPermalink }}" class="flex-1 hover:underline truncate">{{ .Title }}</a>
+            <summary class="tree-section cursor-pointer flex items-center py-1.5 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light group {{ if $isActive }}bg-theme-light dark:bg-darkmode-theme-light{{ end }}">
+              <span class="tree-arrow mr-1.5 text-xs transition-transform">&#9654;</span>
+              <span class="tree-folder-icon mr-1.5 text-xs text-text-light">&#128193;</span>
+              <a href="{{ .RelPermalink }}" class="flex-1 hover:underline truncate font-medium">{{ .Title }}</a>
+              {{ if gt $pageCount 0 }}
+                <span class="text-xs text-text-light ml-1.5">({{ $pageCount }})</span>
+              {{ end }}
             </summary>
-            {{ partial "tree-nav" (dict "page" $.page "node" .) }}
+            {{ partial "tree-nav" (dict "page" $.page "node" . "depth" (add $depth 1)) }}
           </details>
         {{ else }}
-          <a href="{{ .RelPermalink }}" class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate">{{ .Title }}</a>
+          <a href="{{ .RelPermalink }}"
+             class="tree-section-link flex items-center py-1.5 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate font-medium {{ if $isActive }}text-primary font-semibold bg-theme-light dark:bg-darkmode-theme-light{{ end }}">
+            <span class="tree-folder-icon mr-1.5 text-xs text-text-light">&#128193;</span>
+            {{ .Title }}
+            {{ if gt $pageCount 0 }}
+              <span class="text-xs text-text-light ml-1.5">({{ $pageCount }})</span>
+            {{ end }}
+          </a>
         {{ end }}
       </li>
     {{ end }}
   {{ end }}
+
   {{ range .node.RegularPages }}
     {{ $pageSection := .Section }}
     {{ if not $pageSection }}
@@ -40,9 +51,10 @@
       {{ $isActive := eq . $.page }}
       <li>
         <a href="{{ .RelPermalink }}"
-           class="block py-1 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate
-                  {{ if $isActive }}text-primary font-medium{{ end }}">
-          {{ .Title }}
+           class="tree-page-link flex items-center py-1.5 px-2 rounded hover:bg-theme-light dark:hover:bg-darkmode-theme-light hover:underline truncate
+                  {{ if $isActive }}text-primary font-semibold bg-theme-light dark:bg-darkmode-theme-light{{ end }}">
+          <span class="tree-page-icon mr-1.5 text-xs text-text-light">&#128196;</span>
+          <span>{{ .Title }}</span>
         </a>
       </li>
     {{ end }}
