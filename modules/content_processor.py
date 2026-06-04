@@ -555,20 +555,15 @@ def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
     if raw is None:
         raw = get_obsidian_attachment_config(source_root)
     if raw:
-        subdir = raw
-        if subdir.startswith("./"):
-            # Relative to vault root → global strategy
-            subdir = subdir[2:]
-            if subdir:
+        subdir = raw.lstrip("./")
+        if subdir:
+            # Always add note-relative lookup (most common actual location)
+            strategies.append({"type": "relative_subdir", "subdir": subdir})
+            # If the config path was ./xxx, also try vault-root global
+            if raw.startswith("./"):
                 global_dir = os.path.normpath(os.path.join(repo_root, subdir))
                 strategies.append({"type": "global", "dir": global_dir})
-        else:
-            # Relative to each note's directory → relative_subdir
-            if subdir:
-                strategies.append(
-                    {"type": "relative_subdir", "subdir": subdir}
-                )
-        # Also try common parent-relative patterns as fallback
+        # Also try common parent-relative patterns
         strategies.append(
             {"type": "relative_subdir", "subdir": "../attachments"}
         )
@@ -581,6 +576,12 @@ def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
         )
         strategies.append(
             {"type": "relative_subdir", "subdir": "attachments/images"}
+        )
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "../attachments"}
+        )
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "../attachments/images"}
         )
 
     # Add repo-level global strategy from source_images_dir config (optional)
