@@ -295,12 +295,21 @@ def process_single_note(
             )
             placeholder_map[original_syntax] = f"<!--IMG_{idx}-->"
 
-        if replacements:
-            # Protect wiki links with placeholders before calling API
-            content_to_send = raw_content
+        # Also protect any ![[...]] that weren't found as real files,
+        # so raw wiki syntax never reaches DeepSeek.
+        all_wiki_pattern = re.compile(r'!\[\[([^\]]+)\]\]')
+        for match in all_wiki_pattern.finditer(raw_content):
+            syntax = match.group(0)
+            if syntax not in placeholder_map:
+                placeholder = f"<!--RAW_{len(placeholder_map)}-->"
+                placeholder_map[syntax] = placeholder  # identity restore = preserve original
+
+        # Protect all wiki links with placeholders before calling API
+        content_to_send = raw_content
+        if placeholder_map:
             for old_syntax, placeholder in placeholder_map.items():
                 content_to_send = content_to_send.replace(old_syntax, placeholder)
-            print(f"  [image] protected {len(replacements)} link(s) with placeholders")
+            print(f"  [image] protected {len(placeholder_map)} link(s) with placeholders")
         else:
             content_to_send = raw_content
     else:
@@ -316,10 +325,13 @@ def process_single_note(
         processed = content_to_send
 
     # 4. Restore image placeholders back to actual Markdown links
-    if replacements:
+    if placeholder_map:
         for original_syntax, placeholder in placeholder_map.items():
             processed = processed.replace(placeholder, replacements.get(original_syntax, original_syntax))
-        print(f"  [image] restored {len(replacements)} link(s) from placeholders")
+        print(f"  [image] restored {len(placeholder_map)} link(s) from placeholders")
+
+    # Sanitize any raw ![[...]] that DeepSeek may have generated
+    processed = re.sub(r'!\[\[([^\]]+)\]\]', r'[\1]', processed)
 
     # 5. Safeguard against Hugo YAML frontmatter mis-parsing
     if processed.startswith("---"):
