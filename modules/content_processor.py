@@ -309,8 +309,10 @@ def process_single_note(
         processed = "\n" + processed
 
     # 5. Prepend front matter with title and date
-    # Try to extract first H1 from processed content as title
-    title = _extract_first_h1(processed)
+    # 根据配置决定标题来源: "filename" (默认) 或 "h1"
+    title_source = config.get("processing", {}).get("title_source", "filename")
+    if title_source == "h1":
+        title = _extract_first_h1(processed)
     if not title:
         title = os.path.splitext(os.path.basename(rel_path))[0]
         title = _strip_title_prefix(title, config)
