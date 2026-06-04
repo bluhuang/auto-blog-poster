@@ -1,0 +1,22 @@
+{{ with site.Params.giscus }}
+  {{ if .enable }}
+    <div class="mt-16">
+      <h2 class="h4 mb-6">💬 留言</h2>
+      <div id="giscus"></div>
+      <script src="https://giscus.app/client.js"
+        data-repo="{{ .repo }}"
+        data-repo-id="{{ .repo_id }}"
+        data-category="{{ .category }}"
+        data-category-id="{{ .category_id }}"
+        data-mapping="{{ .mapping }}"
+        data-reactions-enabled="{{ .reactions_enabled }}"
+        data-emit-metadata="{{ .emit_metadata }}"
+        data-input-position="{{ .input_position }}"
+        data-lang="{{ .lang }}"
+        data-theme="light"
+        crossorigin="anonymous"
+        async>
+      </script>
+    </div>
+  {{ end }}
+{{ end }}

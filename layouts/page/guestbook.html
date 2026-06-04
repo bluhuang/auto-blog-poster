@@ -1,0 +1,12 @@
+{{ define "main" }}
+<section class="section-sm">
+  <div class="container">
+    <div class="row justify-center">
+      <div class="md:col-8 lg:col-6">
+        <h1 class="h3 mb-8 text-center">{{ .Title }}</h1>
+        {{ partial "giscus" . }}
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}

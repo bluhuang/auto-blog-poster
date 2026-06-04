@@ -81,3 +81,25 @@ map_marker = "images/marker.png"
 enable = false
 mailchimp_form_action = ""
 mailchimp_form_name = ""
+
+[personal]
+  avatar = ""
+  name = "BluHuang"
+  bio = "后端开发 / 技术笔记"
+  intro = "记录技术学习的点滴，涵盖 AI、编程、数据库等方向。"
+
+[[social]]
+  icon = "fab fa-github"
+  link = "https://github.com/bluhuang"
+
+[giscus]
+  enable = false
+  repo = ""
+  repo_id = ""
+  category = ""
+  category_id = ""
+  mapping = "pathname"
+  reactions_enabled = true
+  emit_metadata = false
+  input_position = "top"
+  lang = "zh-CN"

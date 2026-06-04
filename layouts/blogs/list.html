@@ -1,0 +1,35 @@
+{{ define "main" }}
+<section class="section">
+  <div class="container">
+    <div class="row gx-5">
+
+      <!-- Left sidebar: tree navigation -->
+      <aside class="lg:col-3 mb-10 lg:mb-0">
+        <h5 class="mb-4">目录</h5>
+        <div class="overflow-y-auto max-h-[75vh] sticky top-24">
+          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
+        </div>
+      </aside>
+
+      <!-- Right: category cards -->
+      <div class="lg:col-9">
+        {{ range site.Params.mainSections }}
+          {{ with site.GetPage . }}
+          <div class="mb-14">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="h4">{{ .Title }} 专区</h2>
+              <a href="{{ .RelPermalink }}" class="text-sm text-primary hover:underline">查看更多 →</a>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+              {{ range first 6 .RegularPages }}
+                {{ partial "components/blog-card" . }}
+              {{ end }}
+            </div>
+          </div>
+          {{ end }}
+        {{ end }}
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}

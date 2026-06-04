@@ -1,12 +1,22 @@
 [[main]]
+  name = "Home"
+  pageRef = "/"
+  weight = 1
+
+[[main]]
   name = "About"
   pageRef = "/about"
   weight = 10
 
 [[main]]
-  name = "Blog"
-  pageRef = "/"
+  name = "Blogs"
+  pageRef = "/blogs"
   weight = 20
+
+[[main]]
+  name = "Guestbook"
+  pageRef = "/guestbook"
+  weight = 30
 
 [[footer]]
   name = "About"
