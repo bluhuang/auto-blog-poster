@@ -4,6 +4,7 @@ theme = "hugoplate"
 timeZone = "Asia/Shanghai"
 summaryLength = 10
 hasCJKLanguage = true
+enableGitInfo = true
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 
