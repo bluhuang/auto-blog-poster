@@ -1,0 +1,96 @@
+{{ define "main" }}
+  <section class="section pt-7">
+    <div class="container">
+      <div class="row gx-5">
+        <div class="lg:col-3 mb-10 lg:mb-0">
+          <h5 class="mb-4">目录</h5>
+          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
+        </div>
+        <div class="lg:col-9">
+          <article>
+            {{ $image:= .Params.image }}
+            {{ if $image }}
+              <div class="mb-10">
+                {{ partial "image" (dict "Src" $image "Context" .Page "Alt" .Title "Class" "w-full rounded") }}
+              </div>
+            {{ end }}
+            <h1 class="h2 mb-4">
+              {{ .Title }}
+            </h1>
+            <ul class="mb-4">
+              {{ with .Params.author }}
+                <li class="mr-4 inline-block">
+                  <a href="{{ `authors/` | relLangURL }}{{ . | urlize }}/">
+                    <i class="fa-regular fa-circle-user mr-2"></i>{{ . }}
+                  </a>
+                </li>
+              {{ end }}
+              {{ $categories:= .Params.categories }}
+              {{ if $categories }}
+                <li class="mr-4 inline-block">
+                  <i class="fa-regular fa-folder mr-2"></i>
+                  {{ range $i,$p:= $categories }}
+                    <a href="{{ `categories/` | relLangURL }}{{ . | urlize | lower }}/">
+                      {{ . | humanize }}{{ if ne $i (sub (len $categories) 1) }},{{ end }}
+                    </a>
+                  {{ end }}
+                </li>
+              {{ end }}
+              {{ with .PublishDate }}
+                <li class="mr-4 inline-block">
+                  <i class="fa-regular fa-clock mr-2"></i>
+                  {{ time.Format ":date_long" . }}
+                </li>
+              {{ end }}
+            </ul>
+            <div class="content mb-10">
+              {{ partial "toc.html" (dict "Class" "blog" "Collapsed" false "TableOfContents" .TableOfContents) }}
+              {{ .Content }}
+            </div>
+            <div class="row items-start justify-between">
+              {{ $tags:= .Params.tags }}
+              {{ if $tags }}
+                <div class="lg:col-6 mb-10 flex items-center lg:mb-0">
+                  <h5 class="mr-3">{{ T "tags" | default "Tags" }} :</h5>
+                  <ul>
+                    {{ range $i,$p:= $tags }}
+                      <li class="inline-block">
+                        <a class="bg-light hover:bg-primary dark:bg-darkmode-light dark:hover:bg-darkmode-primary dark:hover:text-text-dark m-1 block rounded px-3 py-1 hover:text-white"
+                           href="{{ `tags/` | relLangURL }}{{ . | urlize | lower }}/">
+                          {{ . | humanize }}
+                        </a>
+                      </li>
+                    {{ end }}
+                  </ul>
+                </div>
+              {{ end }}
+              <div class="lg:col-6 flex items-center lg:justify-end">
+                <h5>{{ T "share" | default "Share" }} :</h5>
+                {{ partial "social-share" (dict "Context" . "Class" "share-icons" "Title" .Title "Whatsapp" false "Telegram" false "Linkedin" false "Pinterest" false "Tumblr" false "Vk" false "Reddit" false) }}
+              </div>
+            </div>
+            {{ if site.Config.Services.Disqus.Shortname }}
+              <div class="mt-20">
+                {{ partial "disqus.html" . }}
+              </div>
+            {{ end }}
+          </article>
+          {{ $related := .Site.RegularPages.Related . | first 10 }}
+          {{ $related = $related | shuffle | first 3 }}
+          {{ with $related }}
+            <div class="section pb-0">
+              <h2 class="h3 mb-12">{{ T "related_posts" | default "Related Posts" }}</h2>
+              <div class="row">
+                {{ range . }}
+                  <div class="lg:col-4 md:col-6 mb-14">
+                    {{ partial "components/blog-card" . }}
+                  </div>
+                {{ end }}
+              </div>
+            </div>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  </section>
+{{ end }}
