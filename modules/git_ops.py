@@ -1,9 +1,17 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
+
+
+def _git_version() -> tuple:
+    """Return (major, minor) git version tuple, e.g. (2, 25)."""
+    out = subprocess.run(["git", "--version"], capture_output=True, text=True).stdout
+    m = re.search(r"(\d+)\.(\d+)", out)
+    return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
 
 
 def pull_source_repo(config: dict) -> Path:
@@ -34,43 +42,38 @@ def pull_source_repo(config: dict) -> Path:
         shutil.rmtree(temp_dir)
 
     print(f"Shallow cloning {repository} (branch={branch}, sparse)...")
-    subprocess.run(
-        [
-            "git", "clone",
-            "--depth", "1",
-            "--filter=blob:none",
-            "--sparse",
-            "--branch", branch,
-            clone_url,
-            temp_dir,
-        ],
-        check=True,
-        timeout=120,
-    )
+    clone_cmd = [
+        "git", "clone",
+        "--depth", "1",
+        "--branch", branch,
+        clone_url,
+        temp_dir,
+    ]
+    git_ver = _git_version()
+    if git_ver >= (2, 25):
+        clone_cmd.insert(2, "--filter=blob:none")
+        clone_cmd.insert(3, "--sparse")
+    subprocess.run(clone_cmd, check=True, timeout=120)
 
-    print(f"Setting sparse-checkout to: {notes_subdir}, .obsidian")
-    subprocess.run(
-        [
-            "git", "-C", temp_dir, "sparse-checkout", "set",
-            notes_subdir, ".obsidian",
-        ],
-        check=False,
-        timeout=30,
-    )
-
-    # Also include the source images directory if configured
-    source_images = (
-        config.get("processing", {})
-        .get("image_handling", {})
-        .get("source_images_dir", "")
-    )
-    if source_images:
-        print(f"  Adding to sparse-checkout: {source_images}")
+    if git_ver >= (2, 25):
+        print(f"Setting sparse-checkout to: {notes_subdir}, .obsidian")
         subprocess.run(
-            ["git", "-C", temp_dir, "sparse-checkout", "add", source_images],
-            check=False,
-            timeout=30,
+            ["git", "-C", temp_dir, "sparse-checkout", "set",
+             notes_subdir, ".obsidian"],
+            check=False, timeout=30,
         )
+
+        source_images = (
+            config.get("processing", {})
+            .get("image_handling", {})
+            .get("source_images_dir", "")
+        )
+        if source_images:
+            print(f"  Adding to sparse-checkout: {source_images}")
+            subprocess.run(
+                ["git", "-C", temp_dir, "sparse-checkout", "add", source_images],
+                check=False, timeout=30,
+            )
 
     notes_path = os.path.join(temp_dir, notes_subdir)
     if not os.path.isdir(notes_path):

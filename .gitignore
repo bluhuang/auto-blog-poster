@@ -6,6 +6,9 @@ __pycache__/
 node_modules/
 *.py[cod]
 .hash_cache.json
+.file_times.json
+hugo_stats.json
+static/navigation.json
 failed_notes.log
 .DS_Store
 *.log
