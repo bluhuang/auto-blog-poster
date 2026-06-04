@@ -310,6 +310,7 @@ def process_single_note(
 
     # 5. Prepend front matter with title and date
     # 根据配置决定标题来源: "filename" (默认) 或 "h1"
+    title = ""
     title_source = config.get("processing", {}).get("title_source", "filename")
     if title_source == "h1":
         title = _extract_first_h1(processed)
@@ -378,7 +379,7 @@ def process_all_notes(
     # Auto-detect wiki_image_lookup: explicit config takes priority;
     # otherwise generate rules from .obsidian/app.json.
     if "wiki_image_lookup" not in config.get("processing", {}).get("image_handling", {}):
-        config.setdefault("_wiki_image_lookup", _build_wiki_lookup(source_root))
+        config.setdefault("_wiki_image_lookup", _build_wiki_lookup(source_root, config))
     else:
         config["_wiki_image_lookup"] = config["processing"]["image_handling"]["wiki_image_lookup"]
 
@@ -439,9 +440,9 @@ def process_all_notes(
 _FILE_TIMES_PATH = ".file_times.json"
 
 
-def _build_wiki_lookup(source_root: str) -> List[dict]:
+def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
     """Build wiki image lookup rules from an Obsidian vault's attachment
-    configuration.
+    configuration and project config.
 
     Priority of lookup rules:
 
@@ -454,6 +455,9 @@ def _build_wiki_lookup(source_root: str) -> List[dict]:
 
     3. Fallback default: ``same_dir`` + ``relative_subdir`` subdir
        ``attachments`` + ``relative_subdir`` subdir ``attachments/images``.
+
+    4. If ``config.image_handling.source_images_dir`` is set, also add a
+       ``global`` strategy looking at ``<repo_root>/<source_images_dir>``.
 
     Returns:
         Ordered list of lookup-strategy dicts.
@@ -482,6 +486,14 @@ def _build_wiki_lookup(source_root: str) -> List[dict]:
         strategies.append(
             {"type": "relative_subdir", "subdir": "attachments/images"}
         )
+
+    # 4. Add repo-level global strategy from source_images_dir config
+    img_dir = config.get("processing", {}).get("image_handling", {}).get("source_images_dir", "")
+    if img_dir:
+        repo_root = os.path.dirname(source_root)
+        global_dir = os.path.normpath(os.path.join(repo_root, img_dir))
+        if os.path.isdir(global_dir):
+            strategies.append({"type": "global", "dir": global_dir})
 
     return strategies
 

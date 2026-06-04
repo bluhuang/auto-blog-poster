@@ -19,7 +19,7 @@ processing:
     pattern: "^\\d+\\s*[-.]?\\s*"
   image_handling:
     enabled: true
-    source_images_dir: ""
+    source_images_dir: "attachments"
     target_static_dir: "static/images"
     # wiki_image_lookup:  # ← 可选覆盖，不配置则自动从 .obsidian/app.json 读取
     #   - type: "same_dir"
