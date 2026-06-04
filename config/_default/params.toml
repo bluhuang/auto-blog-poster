@@ -93,13 +93,13 @@ mailchimp_form_name = ""
   link = "https://github.com/bluhuang"
 
 [giscus]
-  enable = false
-  repo = ""
-  repo_id = ""
-  category = ""
-  category_id = ""
+  enable = true
+  repo = "bluhuang/blogs-of-bluhuang"
+  repo_id = "R_kgDOStnEPg"
+  category = "Announcements"
+  category_id = "DIC_kwDOStnEPs4C-eIQ"
   mapping = "pathname"
   reactions_enabled = true
   emit_metadata = false
-  input_position = "top"
+  input_position = "bottom"
   lang = "zh-CN"
