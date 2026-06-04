@@ -84,6 +84,11 @@ defaultContentLanguageInSubdir = false
   link = "plugins/font-awesome/v6/icons.css"
   lazy = true
 
+# KaTeX
+[[params.plugins.css]]
+  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+  attributes = 'integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rl+OelTgXHG+M0E5R2T7LG0" crossorigin="anonymous"'
+
 # JS Plugins
 [[params.plugins.js]]
   link = "js/search.js"
@@ -111,4 +116,11 @@ defaultContentLanguageInSubdir = false
   lazy = true
 [[params.plugins.js]]
   link = "plugins/youtube-lite.js"
+  lazy = true
+
+[[params.plugins.js]]
+  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+  lazy = false
+[[params.plugins.js]]
+  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   lazy = true
