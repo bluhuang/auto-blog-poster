@@ -1,22 +1,46 @@
 {{ define "main" }}
-  <section class="section">
-    <div class="container">
-      <div class="row gx-5">
-        <div class="lg:col-8">
-          <div class="row">
-            {{ $paginator := .Paginate .Site.RegularPages }}
-            {{ range $paginator.Pages }}
-              <div class="md:col-6 mb-14">
+<section class="section">
+  <div class="container">
+
+    {{ partial "personal-intro" . }}
+
+    <div class="row gx-5">
+
+      <!-- Left: Recent updates -->
+      <div class="lg:col-5 mb-10 lg:mb-0">
+        <h2 class="h5 mb-6">最近更新</h2>
+        <ul class="space-y-3">
+          {{ $recent := where .Site.RegularPages "Section" "not in" (slice "about" "guestbook" "blogs") }}
+          {{ range first 15 $recent.ByLastmod.Reverse }}
+          <li class="flex items-baseline gap-3">
+            <span class="text-xs text-text-light shrink-0 w-20 text-right">{{ (.Lastmod | default .Date).Format "2006-01-02" }}</span>
+            <a href="{{ .RelPermalink }}" class="hover:underline truncate">{{ .Title }}</a>
+          </li>
+          {{ end }}
+        </ul>
+      </div>
+
+      <!-- Right: Category cards -->
+      <div class="lg:col-7">
+        {{ range site.Params.mainSections }}
+          {{ with site.GetPage . }}
+          <div class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="h5">{{ .Title }}</h2>
+              <a href="{{ .RelPermalink }}" class="text-sm text-primary hover:underline">查看更多 →</a>
+            </div>
+            <div class="grid md:grid-cols-3 gap-4">
+              {{ range first 3 .RegularPages }}
                 {{ partial "components/blog-card" . }}
-              </div>
-            {{ end }}
+              {{ end }}
+            </div>
           </div>
-          {{ partial "components/pagination.html" . }}
-        </div>
-        <div class="lg:col-4">
-          {{ partial "sidebar-tree.html" . }}
-        </div>
+          {{ end }}
+        {{ end }}
       </div>
     </div>
-  </section>
+
+    {{ partial "giscus" . }}
+  </div>
+</section>
 {{ end }}

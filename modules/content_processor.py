@@ -335,6 +335,8 @@ def process_single_note(
             pass
     if date_val:
         lines.append(f"date: {date_val}")
+        # lastmod 与 date 一致，支持 Hugo 的 .Lastmod 排序
+        lines.append(f"lastmod: {date_val}")
 
     lines.append("---")
     front_matter = "\n".join(lines) + "\n\n"
