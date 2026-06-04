@@ -69,11 +69,7 @@
                 {{ partial "social-share" (dict "Context" . "Class" "share-icons" "Title" .Title "Whatsapp" false "Telegram" false "Linkedin" false "Pinterest" false "Tumblr" false "Vk" false "Reddit" false) }}
               </div>
             </div>
-            {{ if site.Config.Services.Disqus.Shortname }}
-              <div class="mt-20">
-                {{ partial "disqus.html" . }}
-              </div>
-            {{ end }}
+            {{ partial "giscus" . }}
           </article>
           {{ $related := .Site.RegularPages.Related . | first 10 }}
           {{ $related = $related | shuffle | first 3 }}
