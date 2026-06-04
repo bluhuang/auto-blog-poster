@@ -161,7 +161,14 @@ def _make_target_path(note_rel_dir: str, image_basename: str) -> str:
     directory structure.
 
     Example: ``images/算法/fig.png``
+    ``note_rel_dir`` is stripped of any leading ``images/`` to prevent
+    double-nesting when combined with ``target_static_dir``.
     """
-    if note_rel_dir:
-        return f"images/{note_rel_dir}/{image_basename}"
+    # Strip leading "images/" from note_rel_dir to avoid duplication
+    stripped = note_rel_dir
+    if stripped and (stripped.startswith("images/") or stripped.startswith("images\\")):
+        stripped = stripped[len("images/"):]
+        stripped = stripped.lstrip("/\\")
+    if stripped:
+        return f"images/{stripped}/{image_basename}"
     return f"images/{image_basename}"
