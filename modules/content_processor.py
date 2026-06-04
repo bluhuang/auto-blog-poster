@@ -449,15 +449,18 @@ def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
     1. ``same_dir`` — always added first.
     2. From ``.obsidian/app.json`` ``attachmentFolderPath`` (if present):
 
-       - ``./attachments`` → ``relative_subdir`` subdir ``attachments``
-       - ``../assets``    → ``relative_subdir`` subdir ``../assets``
-       - ``attachments/images`` → ``relative_subdir`` subdir ``attachments/images``
+       - ``./attachments`` (starts with ``./``) → ``global`` strategy at
+         ``<vault_root>/attachments/`` (relative to vault root).
+       - ``attachments`` (no ``./``) → ``relative_subdir`` subdir
+         ``attachments/`` (relative to each note's directory).
+       - Also tries ``relative_subdir`` with ``../attachments`` and
+         ``../attachments/images`` for notes nested deeper.
 
     3. Fallback default: ``same_dir`` + ``relative_subdir`` subdir
        ``attachments`` + ``relative_subdir`` subdir ``attachments/images``.
 
     4. If ``config.image_handling.source_images_dir`` is set, also add a
-       ``global`` strategy looking at ``<repo_root>/<source_images_dir>``.
+       ``global`` strategy at ``<repo_root>/<source_images_dir>``.
 
     Returns:
         Ordered list of lookup-strategy dicts.
@@ -474,11 +477,24 @@ def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
     if raw:
         subdir = raw
         if subdir.startswith("./"):
+            # Relative to vault root → global strategy
             subdir = subdir[2:]
-        if subdir:
-            strategies.append(
-                {"type": "relative_subdir", "subdir": subdir}
-            )
+            if subdir:
+                global_dir = os.path.normpath(os.path.join(repo_root, subdir))
+                strategies.append({"type": "global", "dir": global_dir})
+        else:
+            # Relative to each note's directory → relative_subdir
+            if subdir:
+                strategies.append(
+                    {"type": "relative_subdir", "subdir": subdir}
+                )
+        # Also try common parent-relative patterns as fallback
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "../attachments"}
+        )
+        strategies.append(
+            {"type": "relative_subdir", "subdir": "../attachments/images"}
+        )
     else:
         strategies.append(
             {"type": "relative_subdir", "subdir": "attachments"}
@@ -487,10 +503,9 @@ def _build_wiki_lookup(source_root: str, config: dict) -> List[dict]:
             {"type": "relative_subdir", "subdir": "attachments/images"}
         )
 
-    # 4. Add repo-level global strategy from source_images_dir config
+    # Add repo-level global strategy from source_images_dir config (optional)
     img_dir = config.get("processing", {}).get("image_handling", {}).get("source_images_dir", "")
     if img_dir:
-        repo_root = os.path.dirname(source_root)
         global_dir = os.path.normpath(os.path.join(repo_root, img_dir))
         if os.path.isdir(global_dir):
             strategies.append({"type": "global", "dir": global_dir})
