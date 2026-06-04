@@ -368,23 +368,29 @@ def process_single_note(
     if author:
         lines.append(f"author: \"{author}\"")
 
-    # Compute date: .file_times.json → local vault → Git commit
-    date_val = _get_date_from_file_times(config, rel_path)
+    # Compute date (creation) and lastmod (modification)
+    # date:  git first-commit → .file_times.json → local vault → today
+    # lastmod: .file_times.json → local vault → date
+    mtime_val = _get_date_from_file_times(config, rel_path)
+    if mtime_val is None:
+        mtime_val = get_local_file_time(config, rel_path)
+    date_val = mtime_val
+    try:
+        source_repo_dir = config.get("_source_repo_dir", "")
+        if source_repo_dir:
+            repo_path = os.path.dirname(source_repo_dir)
+            file_rel = os.path.relpath(source_path, repo_path)
+            git_first = get_file_first_commit_time(repo_path, file_rel)
+            if git_first:
+                date_val = git_first
+    except Exception:
+        pass
     if date_val is None:
-        date_val = get_local_file_time(config, rel_path)
-    if date_val is None:
-        try:
-            source_repo_dir = config.get("_source_repo_dir", "")
-            if source_repo_dir:
-                repo_path = os.path.dirname(source_repo_dir)
-                file_rel = os.path.relpath(source_path, repo_path)
-                date_val = get_file_first_commit_time(repo_path, file_rel)
-        except Exception:
-            pass
-    if date_val:
-        lines.append(f"date: {date_val}")
-        # lastmod 与 date 一致，支持 Hugo 的 .Lastmod 排序
-        lines.append(f"lastmod: {date_val}")
+        date_val = datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d")
+    if mtime_val is None:
+        mtime_val = date_val
+    lines.append(f"date: {date_val}")
+    lines.append(f"lastmod: {mtime_val}")
 
     lines.append("---")
     front_matter = "\n".join(lines) + "\n\n"
