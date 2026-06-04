@@ -9,3 +9,49 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* === Tree Navigation Styles === */
+
+/* Smooth animation for details expand/collapse */
+.tree-section details {
+  overflow: hidden;
+}
+
+.tree-section details[open] .tree-arrow {
+  transform: rotate(90deg);
+}
+
+/* Hover effect for all tree items */
+.tree-section-link:hover,
+.tree-page-link:hover {
+  background-color: var(--tw-bg-opacity, 1) rgba(0,0,0,0.03);
+}
+
+.dark .tree-section-link:hover,
+.dark .tree-page-link:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* Indentation helper classes for visual depth */
+[style*="padding-left: 12px"] li > ul {
+  border-left: 1px solid rgba(128,128,128,0.15);
+  margin-left: 6px;
+}
+
+/* Active state subtle border indicator */
+.tree-page-link.text-primary,
+.tree-section-link.text-primary {
+  position: relative;
+}
+
+.tree-page-link.text-primary::before,
+.tree-section-link.text-primary::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background-color: var(--tw-color-primary, #2563eb);
+}
