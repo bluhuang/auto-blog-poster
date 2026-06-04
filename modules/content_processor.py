@@ -260,6 +260,8 @@ def process_single_note(
         raw_content = f.read()
 
     # 2. Extract & copy images
+    replacements: Dict[str, str] = {}
+    placeholder_map: Dict[str, str] = {}
     image_handling_cfg = config.get("processing", {}).get(
         "image_handling", {}
     )
@@ -273,8 +275,6 @@ def process_single_note(
         image_links = extract_image_links(
             raw_content, source_path, source_root, wiki_lookup
         )
-        replacements: Dict[str, str] = {}
-        placeholder_map: Dict[str, str] = {}
         for idx, (source_abs, target_rel, original_syntax) in enumerate(
             image_links
         ):
