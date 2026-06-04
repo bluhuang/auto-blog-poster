@@ -25,7 +25,7 @@ processing:
 
       '
     temperature: 0.3
-  force_reprocess_all: true
+  force_reprocess_all: false
   image_download_dir: static/images/
   image_handling:
     enabled: true
