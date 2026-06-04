@@ -267,7 +267,7 @@ def process_single_note(
     )
     image_handling_enabled = image_handling_cfg.get("enabled", False)
     target_static_dir = image_handling_cfg.get(
-        "target_static_dir", "static/images"
+        "target_static_dir", "static"
     )
 
     if image_handling_enabled and raw_content.strip():
