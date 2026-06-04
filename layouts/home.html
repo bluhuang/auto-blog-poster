@@ -6,8 +6,8 @@
 
     <div class="row gx-5">
 
-      <!-- Left: Recent updates -->
-      <div class="lg:col-5 mb-10 lg:mb-0">
+      <!-- Left: Recent updates + tree nav -->
+      <div class="lg:col-4 mb-10 lg:mb-0">
         <h2 class="h5 mb-6">最近更新</h2>
         <ul class="space-y-3">
           {{ $recent := where .Site.RegularPages "Section" "not in" (slice "about" "guestbook" "blogs") }}
@@ -18,10 +18,14 @@
           </li>
           {{ end }}
         </ul>
+        <div class="mt-10">
+          <h5 class="mb-4">目录</h5>
+          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
+        </div>
       </div>
 
       <!-- Right: Category cards -->
-      <div class="lg:col-7">
+      <div class="lg:col-8">
         {{ range site.Params.mainSections }}
           {{ with site.GetPage . }}
           <div class="mb-12">
