@@ -1,21 +1,50 @@
-{{ with site.Params.personal }}
-  <div class="mb-10">
-    <div class="flex flex-col items-center lg:flex-row lg:items-start gap-6">
-      {{ if .avatar }}
-        <img src="{{ .avatar | relURL }}" alt="avatar" class="rounded-full w-24 h-24 object-cover shrink-0">
-      {{ end }}
-      <div class="text-center lg:text-left">
-        <h1 class="h3">{{ .name }}</h1>
-        <p class="text-text-light">{{ .bio }}</p>
-        <p class="mt-2">{{ .intro | markdownify }}</p>
-        {{ with site.Params.social }}
-          <div class="mt-3 flex justify-center lg:justify-start space-x-4 text-xl">
-            {{ range . }}
-              <a href="{{ .link }}" target="_blank" rel="noopener" class="text-text-dark dark:text-white hover:text-primary"><i class="{{ .icon }}"></i></a>
-            {{ end }}
-          </div>
-        {{ end }}
-      </div>
+<div class="prose max-w-none">
+  <div class="flex flex-col items-center lg:flex-row lg:items-start gap-6 mb-6">
+    <img src="/images/dog.png" alt="柴犬" class="rounded-full w-32 h-32 object-cover shrink-0">
+    <div>
+      <h1 class="h3">一个AI工程师的数字花园</h1>
+      <p class="text-text-light">代码、咖啡因与自动流水线</p>
     </div>
   </div>
-{{ end }}
+
+  <p>欢迎来到我的数字"垃圾场"——不是贬义，是那种堆满了宝藏的杂物间。</p>
+  <p>高中时流行 bullet journaling，我会在学校文具区买一本横线本，然后把<strong>所有东西</strong>塞进去：日记、待办、头脑风暴、数学草稿……大概填满了6本。那东西简直救命。现在，我把这个习惯搬到了网上。</p>
+
+  <h2>关于我</h2>
+  <p>我是一名<strong>AI工程师</strong>，曾在英国留学。在数据库内核的深海里泡了多年，专注于<strong>索引与性能优化</strong>。同时也在大模型、RAG和Agent领域持续探索，从系统底层到算法上层保持贯通。</p>
+
+  <h2>这个数字花园会有什么？</h2>
+  <ul>
+    <li><strong>硬核笔记</strong>：RAG评估、混合检索、Agent设计模式——尽量写成人话。</li>
+    <li><strong>实战翻车</strong>：从0到1搭Agent的血泪史，包括但不限于"为什么向量检索结果像在随机游走"。</li>
+    <li><strong>工具链分享</strong>：我如何用 Obsidian + DeepSeek + GitHub Actions 实现全自动博客发布。</li>
+  </ul>
+
+  <h2>柴犬镇园</h2>
+  <p><img src="/images/dog.png" alt="柴犬" class="max-w-full h-auto rounded-lg shadow-md"></p>
+  <p>（柴犬表示：这个花园很安全）</p>
+
+  <h2>我需要朋友（真的）</h2>
+  <p>认识有趣的人有助于个人成长（官方说法）。如果你觉得聊技术、聊转行、聊"为什么这个embedding不work"挺好玩的，欢迎来戳我。</p>
+  <ul>
+    <li><strong>GitHub</strong>：<a href="https://github.com/bluhuang" target="_blank" rel="noopener">https://github.com/bluhuang</a></li>
+    <li><strong>Guestbook</strong>：在博客留言板给我留个言</li>
+  </ul>
+
+  <h2>关于这个站 & 技术彩蛋</h2>
+  <p>这个站的博客文章不是手动搬的——<strong>我写了一个自动流水线</strong>。它叫 <a href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener"><code>auto-blog-poster</code></a>，功能包括：</p>
+  <ul>
+    <li>监听我的 <strong>Obsidian 笔记仓库</strong>，一旦推送，自动触发。</li>
+    <li>调用 <strong>DeepSeek API</strong> 自动脱敏（删公司名、人名）、润色语句、删掉"面试"相关内容。</li>
+    <li>处理 Obsidian 的特殊语法（<code>![[图片.png]]</code> 自动复制并转链）。</li>
+    <li>增量更新：只处理新增或修改的笔记，缓存哈希，避免浪费API额度。</li>
+    <li>最后调用 <strong>Hugo</strong> 生成静态博客，并部署到 <strong>GitHub Pages</strong>。</li>
+  </ul>
+  <p><strong>效果</strong>：我只需要在 Obsidian 里写笔记，推送后几分钟，博客就自动更新了。目前已经稳定跑了 44+ 篇，支持分类卡片、树形导航、搜索、评论、数学公式。</p>
+  <p>想玩的话，项目源码在这里：<a href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener">auto-blog-poster</a><br>
+  博客示例：<a href="https://bluhuang.github.io/blogs-of-bluhuang/" target="_blank" rel="noopener">bluhuang.github.io/blogs-of-bluhuang/</a></p>
+  <p>整个站由 <strong>Hugo + Hugoplate 主题</strong> 构建，没有使用任何分析工具——我不会卖你的数据，因为我连自己的数据都懒得整理。</p>
+  <p><strong>所有内容都是 work in progress</strong>（永远都是）。如果迷路了，可以试试顶部的 <strong>Blogs</strong> 树形导航，或 <strong>搜索</strong> 功能。</p>
+  <hr>
+  <p>✱*.｡:｡✱*.:｡✧*.｡✰*.:｡✧*.｡:｡*.｡✱</p>
+</div>
