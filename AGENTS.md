@@ -41,6 +41,27 @@
 - 调用外部 API（DeepSeek）时实现重试机制（最多3次，指数退避）。
 - 文件操作优先使用 `pathlib.Path`，保证跨平台兼容。
 
+## Git 版本兼容性（重要！）
+- 系统 `/usr/bin/git` 版本 2.22.0（过于老旧，不支持 `--end-of-options`）
+- Hugo 模块系统需要 `git ls-remote --end-of-options`（git ≥ 2.42）
+- **每次构建前**必须设置：`PATH="/tmp:/usr/local/bin:/usr/bin:/bin" hugo ...`
+  - `/tmp/git` 是一个指向 brew git 的包装脚本
+  - brew git 位于 `/usr/local/opt/git/bin/git`（2.54.0）
+  - 如果 `/tmp/git` 不存在，运行：
+    ```
+    cat > /tmp/git << 'GITEOF'
+    #!/bin/bash
+    /usr/local/opt/git/bin/git "$@"
+    GITEOF
+    chmod +x /tmp/git
+    ```
+- 在 GitHub Actions（CI）中没有此问题，因为 CI 的 git 版本足够新
+
+## 关于页面（About）渲染
+- `content/about.md` **不能**有 `layout: about` 前注，否则 Hugo 会使用主题的 `themes/hugoplate/layouts/about.html`（单栏居中布局，不含 personal-intro）
+- 改用 `layouts/_default/single.html` 中的条件判断：`{{ if eq .Title "About" }}{{ partial "personal-intro" . }}{{ end }}`
+- 这确保了 about 页自动使用两栏布局（tree-nav + content）并正确渲染 personal-intro
+
 ## 项目结构提醒
 - `modules/`：核心逻辑（git_ops, content_processor, obsidian_parser, deepseek_client, hugo_builder, deployer, cache_persister）
 - `content/`：处理后的 Markdown（不提交）

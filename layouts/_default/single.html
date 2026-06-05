@@ -1,6 +1,9 @@
 {{ define "main" }}
   <section class="section pt-7">
     <div class="container">
+      {{ if eq .Title "About" }}
+        {{ partial "personal-intro" . }}
+      {{ end }}
       <div class="row gx-5">
         <div class="lg:col-3 mb-10 lg:mb-0">
           <h5 class="mb-4">目录</h5>
