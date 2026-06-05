@@ -20,7 +20,7 @@
             <ul class="mb-4">
               {{ with .Params.author }}
                 <li class="mr-4 inline-block">
-                  <a href="{{ `authors/` | relLangURL }}{{ . | urlize }}/">
+                  <a href="{{ "about/" | relURL }}">
                     <i class="fa-regular fa-circle-user mr-2"></i>{{ . }}
                   </a>
                 </li>
