@@ -12,6 +12,9 @@ content/os_theories/
 content/paper*/
 content/z_efficiency/
 content/z_mixed/
+# Personal images (avatar, body illustration) — copied by pipeline from vault
+static/images/avatar.jpg
+static/images/dog-inline.jpg
 static/images/AI/
 static/images/coding/
 static/images/database/
