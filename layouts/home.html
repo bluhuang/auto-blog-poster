@@ -2,50 +2,50 @@
 <section class="section">
   <div class="container">
     <div class="row gx-5">
-      <!-- 左列：最近更新 + 文件夹分类卡片 -->
+      <!-- 左列：最近更新 + 目录 -->
       <div class="lg:col-4 mb-10 lg:mb-0">
-        <!-- 最近更新 -->
-        <div class="mb-8">
-          <h2 class="h5 mb-4">最近更新</h2>
-          <ul class="space-y-2">
-            {{ $recent := where .Site.RegularPages "Section" "not in" (slice "about" "guestbook") }}
-            {{ range first 15 $recent.ByLastmod.Reverse }}
-            <li class="flex items-baseline gap-2">
-              <span class="text-xs text-text-light shrink-0 w-16">{{ (.Lastmod | default .Date).Format "2006-01-02" }}</span>
-              <a href="{{ .RelPermalink }}" class="hover:underline truncate">{{ .Title }}</a>
-            </li>
-            {{ end }}
-          </ul>
+        <h2 class="h5 mb-6">最近更新</h2>
+        <ul class="space-y-3">
+          {{ $recent := where .Site.RegularPages "Section" "not in" (slice "about" "guestbook") }}
+          {{ range first 15 $recent.ByLastmod.Reverse }}
+          <li class="flex items-baseline gap-3">
+            <span class="text-xs text-text-light shrink-0 w-20 text-right">{{ (.Lastmod | default .Date).Format "2006-01-02" }}</span>
+            <a href="{{ .RelPermalink }}" class="hover:underline truncate">{{ .Title }}</a>
+          </li>
+          {{ end }}
+        </ul>
+        <div class="mt-10">
+          <h5 class="mb-4">目录</h5>
+          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
         </div>
+      </div>
 
-        <!-- 文件夹分类卡片区 -->
-        {{ $sections := site.Params.mainSections }}
-        {{ range $section := $sections }}
-          {{ with site.GetPage (printf "/%s" $section) }}
-          <div class="mb-8">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="h6">{{ .Title }}</h3>
-              <a href="{{ .RelPermalink }}" class="text-xs text-primary hover:underline">更多 →</a>
+      <!-- 右列：个人介绍 → 分类卡片 → 留言板 -->
+      <div class="lg:col-8">
+        {{ partial "personal-intro" . }}
+
+        <!-- 文件夹分类卡片区（RegularPagesRecursive 支持嵌套子目录） -->
+        {{ range site.Params.mainSections }}
+          {{ with site.GetPage . }}
+          <div class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="h5">{{ .Title }}</h2>
+              <a href="{{ .RelPermalink }}" class="text-sm text-primary hover:underline">查看更多 →</a>
             </div>
-            <div class="grid grid-cols-1 gap-3">
-              {{ range first 3 .RegularPages.ByDate.Reverse }}
+            <div class="grid md:grid-cols-3 gap-4">
+              {{ range first 3 .RegularPagesRecursive.ByDate.Reverse }}
                 {{ partial "components/blog-card" . }}
               {{ end }}
             </div>
           </div>
           {{ end }}
         {{ end }}
-      </div>
 
-      <!-- 右列：个人介绍 -->
-      <div class="lg:col-8">
-        {{ partial "personal-intro" . }}
+        <!-- 留言板 -->
+        <div class="mt-16">
+          {{ partial "giscus" . }}
+        </div>
       </div>
-    </div>
-
-    <!-- 留言板 -->
-    <div class="mt-16">
-      {{ partial "giscus" . }}
     </div>
   </div>
 </section>
