@@ -1,6 +1,7 @@
 ---
 draft: false
 title: About
+layout: about
 ---
 
 This blog is automatically generated from Obsidian notes, powered by [Hugo](https://gohugo.io) and the [newsroom](https://github.com/onweru/newsroom) theme.
