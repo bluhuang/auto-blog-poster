@@ -83,7 +83,7 @@ mailchimp_form_action = ""
 mailchimp_form_name = ""
 
 [personal]
-  avatar = "images/avatar.png"
+  avatar = "images/avatar.jpg"
   name = "BluHuang"
   bio = "后端开发 / 技术笔记"
   intro = "记录技术学习的点滴，涵盖 AI、编程、数据库等方向。"
