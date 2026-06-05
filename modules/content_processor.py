@@ -448,11 +448,18 @@ def process_all_notes(
 
     if force:
         print("force_reprocess_all = true: deleting cache and reprocessing all files")
+        # Load old cache before deleting it, to detect files removed from source
+        old_cache = load_hash_cache(hash_cache_path)
+        current_files = set(scan_md_files(source_root))
+        to_delete = sorted(set(old_cache.keys()) - current_files)
+        if to_delete:
+            print(f"Files to delete ({len(to_delete)}):")
+            for p in to_delete:
+                print(f"  - {p}")
         if os.path.isfile(hash_cache_path):
             os.remove(hash_cache_path)
             print(f"  removed {hash_cache_path}")
-        to_process = scan_md_files(source_root)
-        to_delete: List[str] = []
+        to_process = sorted(current_files)
     else:
         to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
 
