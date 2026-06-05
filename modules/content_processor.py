@@ -512,6 +512,9 @@ def process_all_notes(
             mtimes[rel_path] = mtime
     save_hash_cache(hash_cache_path, new_cache, mtimes)
 
+    # Copy personal images from vault (avatar, body illustration)
+    copy_personal_images(config)
+
     # Reset force_reprocess_all so subsequent runs are incremental
     if force:
         processing_cfg["force_reprocess_all"] = False
@@ -665,6 +668,52 @@ def _generate_file_times_cache(config: dict) -> None:
     with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
         json.dump(times, f, indent=2, ensure_ascii=False)
     print(f"  Wrote {len(times)} entries to {_FILE_TIMES_PATH}")
+
+
+def copy_personal_images(config: dict) -> None:
+    """Copy personal images (avatar, body illustration) from vault to static/.
+
+    Reads source paths from ``config.processing.personal_images``,
+    resolves them relative to the vault root, and copies them to
+    ``static/<target_static_dir>/images/<target>`` so Hugo can serve them.
+
+    If the local vault is inaccessible the copy is skipped; this is
+    expected in CI where personal images are already persisted in the
+    ``processed-cache`` branch.
+    """
+    vault = config.get("processing", {}).get("local_vault_path", "")
+    if not vault or not os.path.isdir(vault):
+        print("Local vault not found; skipping personal image copy")
+        return
+
+    personal_images = config.get("processing", {}).get("personal_images", {})
+    if not personal_images:
+        print("No personal_images configured; skipping")
+        return
+
+    target_static_dir = (
+        config.get("processing", {})
+        .get("image_handling", {})
+        .get("target_static_dir", "static")
+    )
+
+    for key, img_cfg in personal_images.items():
+        source_path = img_cfg.get("source", "")
+        target_name = img_cfg.get("target", "")
+        if not source_path or not target_name:
+            print(f"  [personal_image] skipping {key}: missing source or target")
+            continue
+
+        source_abs = os.path.join(vault, source_path)
+        target_abs = os.path.join(target_static_dir, "images", target_name)
+
+        if not os.path.isfile(source_abs):
+            print(f"  [personal_image] source not found: {source_abs}")
+            continue
+
+        os.makedirs(os.path.dirname(target_abs), exist_ok=True)
+        shutil.copy2(source_abs, target_abs)
+        print(f"  [personal_image] copied: {source_path} -> {target_abs}")
 
 
 def _save_processing_config(config: dict, config_path: str = "config.yaml") -> None:

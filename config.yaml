@@ -31,6 +31,13 @@ processing:
     enabled: true
     source_images_dir: attachments
     target_static_dir: static
+  personal_images:
+    avatar:
+      source: "../Avatar.JPG"
+      target: "avatar.jpg"
+    body_image:
+      source: "../汪汪队.jpg"
+      target: "dog-inline.jpg"
   image_processing: true
   incremental: true
   local_vault_path: '/Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu obsidian'
