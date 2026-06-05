@@ -485,6 +485,22 @@ def process_all_notes(
     # them as proper sections (needed for tree-nav recursion).
     _ensure_section_indexes(content_dir)
 
+    # Remove orphan content files that exist in content/ but not in source
+    source_rel_paths = set(scan_md_files(source_root))
+    orphan_count = 0
+    for filepath in Path(content_dir).rglob("*.md"):
+        rel = filepath.relative_to(content_dir).as_posix()
+        if filepath.name == "_index.md":
+            continue
+        if rel in ("about.md", "guestbook.md"):
+            continue
+        if rel not in source_rel_paths:
+            os.remove(str(filepath))
+            print(f"Deleted (orphan): {rel}")
+            orphan_count += 1
+    if orphan_count:
+        print(f"  removed {orphan_count} orphan content file(s)")
+
     # Build new cache and collect mtimes
     new_cache: Dict[str, str] = {}
     mtimes: Dict[str, str] = {}
