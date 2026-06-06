@@ -100,6 +100,12 @@ a:hover {
   text-decoration-color: var(--color-primary, #007AFF);
   text-underline-offset: 3px;
 }
+/* 键盘焦点用户获得与 hover 一致的下划线反馈 */
+a:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary, #007AFF);
+  text-underline-offset: 3px;
+}
 
 /* === 7. 标题层级：向 SF Pro Display 风靠拢（更紧的行高 + tracking-tight） === */
 h1, h2, h3, h4, h5, h6 {
