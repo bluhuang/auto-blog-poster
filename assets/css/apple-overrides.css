@@ -205,6 +205,79 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* === 12. 增强对比度支持（用户系统开启 "增强对比度" 时触发） === */
+@media (prefers-contrast: more) {
+  /* primary 颜色加深以达到 WCAG AAA (7:1) */
+  :root {
+    --color-primary: #0051D5;
+  }
+  .dark {
+    --color-darkmode-primary: #409CFF;
+  }
+  /* 次要文字加深 */
+  .text-text-light,
+  .text-text-light\:hover {
+    color: #4A4A4F;
+  }
+  .dark .text-text-light,
+  .dark .text-text-light\:hover {
+    color: #C7C7CC;
+  }
+  /* 边框加深、加粗 */
+  .border-border,
+  .apple-card,
+  .article-hero,
+  .page-header-glass,
+  .site-header {
+    border-width: 1.5px;
+    border-color: rgba(0, 0, 0, 0.4);
+  }
+  .dark .border-border,
+  .dark .apple-card,
+  .dark .article-hero,
+  .dark .page-header-glass,
+  .dark .site-header {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  /* 焦点环加粗到 3px */
+  *:focus-visible {
+    outline-width: 3px !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* === 13. 减少透明度支持（用户系统开启 "减少透明度" 时触发） === */
+@media (prefers-reduced-transparency: reduce) {
+  /* 所有毛玻璃/玻璃效果改为实色 */
+  .site-header,
+  .apple-card,
+  .glass,
+  .glass-strong {
+    background-color: var(--color-body) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .article-hero {
+    background: var(--color-light) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .page-header-glass {
+    background: var(--color-light) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .article-hero,
+  .dark .page-header-glass {
+    background: var(--color-darkmode-light) !important;
+  }
+  /* 树形导航展开区也改实色 */
+  .tree-section details[open] > summary + * {
+    background: transparent !important;
+    border: none !important;
+  }
+}
+
 /* === 11. 滚动条（macOS 风格细滚动条） === */
 ::-webkit-scrollbar {
   width: 10px;
