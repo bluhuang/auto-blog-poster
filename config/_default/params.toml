@@ -32,7 +32,7 @@ exclude = []
 
 [search]
 enable = true
-primary_color = "#121212"
+primary_color = "#007AFF"
 include_sections = ["AI", "coding", "database"]
 show_image = true
 show_description = true
