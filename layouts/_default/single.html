@@ -14,10 +14,11 @@
                 {{ partial "image" (dict "Src" $image "Context" .Page "Alt" .Title "Class" "w-full rounded") }}
               </div>
             {{ end }}
-            <h1 class="h2 mb-4">
+            <div class="article-hero mb-8">
+            <h1 class="h2 mb-3">
               {{ .Title }}
             </h1>
-            <ul class="mb-4">
+            <ul class="mb-0">
               {{ with .Params.author }}
                 <li class="mr-4 inline-block">
                   <a href="{{ "about/" | relURL }}">
@@ -43,6 +44,7 @@
                 </li>
               {{ end }}
             </ul>
+            </div>
             <div class="content mb-10">
               {{ partial "toc.html" (dict "Class" "blog" "Collapsed" false "TableOfContents" .TableOfContents) }}
               {{ .Content }}

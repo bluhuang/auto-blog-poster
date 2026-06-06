@@ -1,4 +1,4 @@
-<div class="bg-body dark:bg-darkmode-body blog-card">
+<div class="apple-card p-5 shadow-sm blog-card">
   {{ $image:= .Params.image }}
   {{ if $image }}
     {{ partial "image" (dict "Src" $image "Context" .Page "Alt" .Title "Class" "mb-6 w-full rounded") }}
