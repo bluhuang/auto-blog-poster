@@ -1,4 +1,14 @@
 {{- $src := .Destination | safeURL -}}
 {{- $trimmed := strings.TrimPrefix "/" $src -}}
 {{- $relURL := relURL $trimmed -}}
-<img src="{{ $relURL }}" alt="{{ .Text }}" {{ with .Title }} title="{{ . }}" {{ end }} />
+{{- /* 从 src 推导 fallback：取文件名（去后缀），便于内容图片缺失 alt 时仍有可读描述 */ -}}
+{{- $fallback := path.BaseName $trimmed -}}
+{{- $alt := "" -}}
+{{- with .Text }}{{ $alt = . }}{{ end -}}
+{{- if not $alt }}{{ with .Title }}{{ $alt = . }}{{ end }}{{ end -}}
+{{- if not $alt }}{{ $alt = $fallback }}{{ end -}}
+<img src="{{ $relURL }}"
+     alt="{{ $alt }}"
+     loading="lazy"
+     decoding="async"
+     {{ with .Title }} title="{{ . }}" {{ end }} />

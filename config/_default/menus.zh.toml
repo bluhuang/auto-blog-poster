@@ -1,24 +1,24 @@
 [[main]]
-  name = "Home"
+  name = "首页"
   pageRef = "/"
   weight = 1
 
 [[main]]
-  name = "About"
+  name = "关于"
   pageRef = "/about"
   weight = 10
 
 [[main]]
-  name = "Blogs"
+  name = "博客"
   pageRef = "/blogs"
   weight = 20
 
 [[main]]
-  name = "Guestbook"
+  name = "留言板"
   pageRef = "/guestbook"
   weight = 30
 
 [[footer]]
-  name = "About"
+  name = "关于"
   pageRef = "/about"
   weight = 10

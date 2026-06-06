@@ -55,3 +55,28 @@
   border-radius: 0 2px 2px 0;
   background-color: var(--tw-color-primary, #2563eb);
 }
+
+/* === Keyboard Focus Visibility (WCAG 2.4.7) === */
+/* 键盘 Tab 导航时显示焦点环；鼠标点击时隐藏 */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--color-primary, #007AFF);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* 树形导航里的链接需要带圆角，激活态需保留左侧色条 */
+.tree-page-link:focus-visible,
+.tree-section-link:focus-visible {
+  outline-offset: -2px;
+  background-color: var(--color-light, #f6f6f6);
+}
+.dark .tree-page-link:focus-visible,
+.dark .tree-section-link:focus-visible {
+  background-color: var(--color-darkmode-light, #222222);
+}
+/* 树形 <summary> 自定义 disclosure 没有键盘指示器 */
+.tree-section summary:focus-visible {
+  outline: 2px solid var(--color-primary, #007AFF);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

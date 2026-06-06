@@ -1,5 +1,5 @@
-[en]
-  label = "En"
-  locale = "en-us"
+[zh]
+  label = "中文"
+  locale = "zh-cn"
   contentDir = "content"
   weight = 1
