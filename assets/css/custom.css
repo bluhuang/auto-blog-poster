@@ -21,29 +21,49 @@
   transform: rotate(90deg);
 }
 
+/* Smooth details expand/collapse via max-height animation */
+.tree-section details > ul {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 300ms ease, opacity 250ms ease, margin 200ms ease;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.tree-section details[open] > ul {
+  max-height: 2000px;
+  opacity: 1;
+}
+
 /* Hover effect for all tree items */
+.tree-section-link,
+.tree-page-link {
+  transition: background-color 150ms ease, color 150ms ease;
+}
 .tree-section-link:hover,
 .tree-page-link:hover {
-  background-color: var(--tw-bg-opacity, 1) rgba(0,0,0,0.03);
+  background-color: rgba(0, 0, 0, 0.04);
 }
-
 .dark .tree-section-link:hover,
 .dark .tree-page-link:hover {
-  background-color: rgba(255,255,255,0.05);
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Indentation helper classes for visual depth */
-[style*="padding-left: 12px"] li > ul {
-  border-left: 1px solid rgba(128,128,128,0.15);
-  margin-left: 6px;
+/* Indentation helper: elegant nesting line (Apple style) */
+[style*="padding-left: 12px"] > ul {
+  border-left: 1.5px solid rgba(128, 128, 128, 0.12);
+  margin-left: 8px;
+  padding-left: 4px !important;
+}
+.dark [style*="padding-left: 12px"] > ul {
+  border-left-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Active state subtle border indicator */
+/* Active state subtle border indicator (Apple Blue) */
 .tree-page-link.text-primary,
 .tree-section-link.text-primary {
   position: relative;
 }
-
 .tree-page-link.text-primary::before,
 .tree-section-link.text-primary::before {
   content: "";
@@ -52,8 +72,8 @@
   top: 4px;
   bottom: 4px;
   width: 3px;
-  border-radius: 0 2px 2px 0;
-  background-color: var(--tw-color-primary, #2563eb);
+  border-radius: 0 3px 3px 0;
+  background-color: var(--color-primary, #007AFF);
 }
 
 /* === Keyboard Focus Visibility (WCAG 2.4.7) === */
