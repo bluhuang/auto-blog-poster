@@ -5,6 +5,12 @@ import subprocess
 _ITEMS = ["content", "static/images", ".hash_cache.json", ".file_times.json"]
 _CACHE_BRANCH = "processed-cache"
 
+# User-managed content files that are NOT generated from Obsidian notes.
+# These must NEVER be overwritten by the cache restore — local edits
+# take priority. Mirrors the exclusion list in
+# content_processor.process_all_notes().
+_PROTECTED_CONTENT_FILES = {"about.md", "guestbook.md"}
+
 
 def pull_cache(config: dict) -> None:
     """Restore processed content, images, and hash cache from the
@@ -55,6 +61,11 @@ def pull_cache(config: dict) -> None:
                 target_dir = os.path.join(dst, rel_dir)
                 os.makedirs(target_dir, exist_ok=True)
                 for fname in files:
+                    # Skip protected content files (user-managed, not auto-generated)
+                    if item == "content" and fname in _PROTECTED_CONTENT_FILES:
+                        display = rel_dir + "/" + fname if rel_dir != "." else fname
+                        print(f"  (skip) {display}: protected, preserving local version")
+                        continue
                     s = os.path.join(root_dir, fname)
                     d = os.path.join(target_dir, fname)
                     shutil.copy2(s, d)
