@@ -33,7 +33,7 @@ jobs:
         run: npm ci || npm install
 
       - name: Generate theme CSS
-        run: node themes/hugoplate/scripts/themeGenerator.js
+        run: bash scripts/regenerate-theme.sh
 
       - name: Setup Python
         uses: actions/setup-python@v5

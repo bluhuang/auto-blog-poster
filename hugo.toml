@@ -89,6 +89,10 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "css/custom.css"
 
+# Apple-style overrides (loaded after custom.css so it wins cascade)
+[[params.plugins.css]]
+  link = "css/apple-overrides.css"
+
 # KaTeX
 [[params.plugins.css]]
   link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"

@@ -2,38 +2,38 @@
   "colors": {
     "default": {
       "theme_color": {
-        "primary": "#121212",
-        "body": "#fff",
-        "border": "#eaeaea",
-        "light": "#f6f6f6",
-        "dark": "#040404"
+        "primary": "#007AFF",
+        "body": "#FFFFFF",
+        "border": "#E5E5E7",
+        "light": "#F5F5F7",
+        "dark": "#1D1D1F"
       },
       "text_color": {
-        "text": "#444444",
-        "text_dark": "#040404",
-        "text_light": "#717171"
+        "text": "#1D1D1F",
+        "text_dark": "#1D1D1F",
+        "text_light": "#86868B"
       }
     },
     "darkmode": {
       "theme_color": {
-        "primary": "#fff",
-        "body": "#1c1c1c",
-        "border": "#3E3E3E",
-        "light": "#222222",
-        "dark": "#fff"
+        "primary": "#0A84FF",
+        "body": "#000000",
+        "border": "#2C2C2E",
+        "light": "#1C1C1E",
+        "dark": "#FFFFFF"
       },
       "text_color": {
-        "text": "#B4AFB6",
-        "text_dark": "#fff",
-        "text_light": "#B4AFB6"
+        "text": "#F5F5F7",
+        "text_dark": "#FFFFFF",
+        "text_light": "#98989D"
       }
     }
   },
   "fonts": {
     "font_family": {
-      "primary": "Heebo:wght@400;600",
+      "primary": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei'",
       "primary_type": "sans-serif",
-      "secondary": "Signika:wght@500;700",
+      "secondary": "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'PingFang SC'",
       "secondary_type": "sans-serif"
     },
     "font_size": {
