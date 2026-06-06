@@ -13,9 +13,36 @@
         data-emit-metadata="{{ .emit_metadata }}"
         data-input-position="{{ .input_position }}"
         data-lang="{{ .lang }}"
-        data-theme="light"
+        data-theme="preferred_color_scheme"
         crossorigin="anonymous"
         async>
+      </script>
+      <script>
+        // 监听主题切换，主动调用 giscus.setTheme 保持暗黑模式同步
+        // 主题状态由 documentElement 的 .dark class 标识
+        (function () {
+          var LIGHT_THEMES = ['light', 'noborder_light'];
+          var DARK_THEMES = ['noborder_dark', 'dark_dimmed', 'dark'];
+          function currentGiscusTheme() {
+            return document.documentElement.classList.contains('dark') ? DARK_THEMES[1] : LIGHT_THEMES[0];
+          }
+          function syncGiscus() {
+            if (window.giscus && typeof window.giscus.setTheme === 'function') {
+              try { window.giscus.setTheme(currentGiscusTheme()); } catch (e) { /* giscus 未就绪 */ }
+            }
+          }
+          // 用 MutationObserver 监听 <html> class 变化
+          new MutationObserver(syncGiscus).observe(document.documentElement, {
+            attributes: true, attributeFilter: ['class']
+          });
+          // 兜底：用户点击主题切换按钮后立即触发
+          document.addEventListener('click', function (e) {
+            var t = e.target;
+            if (t && (t.closest('[data-theme-switcher]') || t.closest('.theme-switcher'))) {
+              setTimeout(syncGiscus, 50);
+            }
+          });
+        })();
       </script>
     </div>
   {{ end }}

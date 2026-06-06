@@ -5,7 +5,7 @@ timeZone = "Asia/Shanghai"
 summaryLength = 50
 hasCJKLanguage = true
 enableGitInfo = true
-defaultContentLanguage = "en"
+defaultContentLanguage = "zh"
 defaultContentLanguageInSubdir = false
 
 [permalinks]
