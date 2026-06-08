@@ -3,16 +3,6 @@
     <div class="mt-16">
       <h2 class="h4 mb-6">💬 留言</h2>
       <div id="giscus"></div>
-      <script>
-        // 在 giscus 加载前，根据博客实际主题设置 data-theme
-        (function() {
-          var theme = document.documentElement.classList.contains('dark')
-            ? 'dark_dimmed'
-            : 'light';
-          var script = document.querySelector('script[src*="giscus.app"]');
-          if (script) script.setAttribute('data-theme', theme);
-        })();
-      </script>
       <script src="https://giscus.app/client.js"
         data-repo="{{ .repo }}"
         data-repo-id="{{ .repo_id }}"
@@ -23,24 +13,34 @@
         data-emit-metadata="{{ .emit_metadata }}"
         data-input-position="{{ .input_position }}"
         data-lang="{{ .lang }}"
+        data-theme="light"
         crossorigin="anonymous"
         async>
       </script>
       <script>
-        // 监听主题切换，主动调用 giscus.setTheme 保持暗黑模式同步
-        // 主题状态由 documentElement 的 .dark class 标识
         (function () {
           var LIGHT_THEMES = ['light', 'noborder_light'];
           var DARK_THEMES = ['noborder_dark', 'dark_dimmed', 'dark'];
-          function currentGiscusTheme() {
-            return document.documentElement.classList.contains('dark') ? DARK_THEMES[1] : LIGHT_THEMES[0];
+          function getTheme() {
+            return document.documentElement.classList.contains('dark')
+              ? DARK_THEMES[1] : LIGHT_THEMES[0];
           }
           function syncGiscus() {
             if (window.giscus && typeof window.giscus.setTheme === 'function') {
-              try { window.giscus.setTheme(currentGiscusTheme()); } catch (e) { /* giscus 未就绪 */ }
+              try { window.giscus.setTheme(getTheme()); } catch (e) {}
             }
           }
-          // 用 MutationObserver 监听 <html> class 变化
+          // 轮询等待 giscus 加载完成，确保初始主题正确
+          function waitAndSync(attempts) {
+            attempts = attempts || 0;
+            if (attempts > 50) return;
+            syncGiscus();
+            if (!window.giscus || typeof window.giscus.setTheme !== 'function') {
+              setTimeout(function() { waitAndSync(attempts + 1); }, 100);
+            }
+          }
+          waitAndSync();
+          // 监听 <html> class 变化（主题切换）
           new MutationObserver(syncGiscus).observe(document.documentElement, {
             attributes: true, attributeFilter: ['class']
           });

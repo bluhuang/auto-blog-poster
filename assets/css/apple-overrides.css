@@ -198,6 +198,12 @@ h1, h2, h3, h4, h5, h6 {
 .dark .apple-card li {
   color: var(--color-darkmode-text, #F5F5F7);
 }
+.dark .apple-card strong {
+  color: var(--color-darkmode-text-dark, #FFFFFF);
+}
+.dark .apple-card a {
+  color: var(--color-darkmode-primary, #0A84FF);
+}
 .dark .apple-card .text-text-light {
   color: var(--color-darkmode-text-light, #98989D);
 }
