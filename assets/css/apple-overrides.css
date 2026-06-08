@@ -193,6 +193,22 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-darkmode-light, #1C1C1E);
   border-color: var(--color-darkmode-border, #2C2C2E);
 }
+.dark .apple-card,
+.dark .apple-card p,
+.dark .apple-card li {
+  color: var(--color-darkmode-text, #F5F5F7);
+}
+.dark .apple-card .text-text-light {
+  color: var(--color-darkmode-text-light, #98989D);
+}
+.dark .apple-card h1,
+.dark .apple-card h2,
+.dark .apple-card h3,
+.dark .apple-card h4,
+.dark .apple-card h5,
+.dark .apple-card h6 {
+  color: var(--color-darkmode-text-dark, #FFFFFF);
+}
 
 /* === 10. Reduce Motion（尊重系统偏好） === */
 @media (prefers-reduced-motion: reduce) {
