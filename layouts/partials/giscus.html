@@ -3,6 +3,16 @@
     <div class="mt-16">
       <h2 class="h4 mb-6">💬 留言</h2>
       <div id="giscus"></div>
+      <script>
+        // 在 giscus 加载前，根据博客实际主题设置 data-theme
+        (function() {
+          var theme = document.documentElement.classList.contains('dark')
+            ? 'dark_dimmed'
+            : 'light';
+          var script = document.querySelector('script[src*="giscus.app"]');
+          if (script) script.setAttribute('data-theme', theme);
+        })();
+      </script>
       <script src="https://giscus.app/client.js"
         data-repo="{{ .repo }}"
         data-repo-id="{{ .repo_id }}"
@@ -13,7 +23,6 @@
         data-emit-metadata="{{ .emit_metadata }}"
         data-input-position="{{ .input_position }}"
         data-lang="{{ .lang }}"
-        data-theme="preferred_color_scheme"
         crossorigin="anonymous"
         async>
       </script>
