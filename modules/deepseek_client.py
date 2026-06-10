@@ -79,7 +79,11 @@ def call_deepseek(content: str, config: dict) -> str:
             if resp.status_code == 200:
                 data = resp.json()
                 result = data["choices"][0]["message"]["content"]
-                print(f"  DeepSeek API returned {len(result)} chars")
+                finish_reason = data["choices"][0].get("finish_reason", "unknown")
+                print(f"  DeepSeek API returned {len(result)} chars (finish_reason: {finish_reason})")
+                if finish_reason == "length":
+                    print(f"  ⚠️  WARNING: Response truncated by max_tokens ({max_tokens})!")
+                    print(f"  ⚠️  Consider increasing max_tokens in config.yaml")
                 return result
             else:
                 last_error = f"HTTP {resp.status_code}: {resp.text[:500]}"
