@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -150,7 +151,11 @@ def _strip_title_prefix(title: str, config: dict) -> str:
     cfg = config.get("processing", {}).get("title_strip_prefix", {})
     if cfg.get("enabled", False):
         pattern = cfg.get("pattern", "^\\d+\\s*[-.]?\\s*")
-        return re.sub(pattern, "", title, count=1)
+        title = re.sub(pattern, "", title, count=1)
+    kw_cfg = config.get("processing", {}).get("title_strip_keywords", {})
+    if kw_cfg.get("enabled", False):
+        for pattern in kw_cfg.get("patterns", []):
+            title = re.sub(pattern, "", title)
     return title
 
 
@@ -282,12 +287,15 @@ def process_single_note(
             if not os.path.isfile(dest_path):
                 os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
                 try:
-                    shutil.copy2(source_abs, dest_path)
-                    print(f"  [image] copied: {os.path.basename(source_abs)}")
-                except OSError as e:
-                    raise Exception(
-                        f"Failed to copy image {source_abs} for {rel_path}: {e}"
-                    ) from e
+                    if source_abs.startswith("http://") or source_abs.startswith("https://"):
+                        urllib.request.urlretrieve(source_abs, dest_path)
+                        print(f"  [image] downloaded: {os.path.basename(dest_path)}")
+                    else:
+                        shutil.copy2(source_abs, dest_path)
+                        print(f"  [image] copied: {os.path.basename(source_abs)}")
+                except Exception as e:
+                    print(f"  [image] failed ({type(e).__name__}): {os.path.basename(source_abs)} - {e}")
+                    continue
             else:
                 print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
             replacements[original_syntax] = (

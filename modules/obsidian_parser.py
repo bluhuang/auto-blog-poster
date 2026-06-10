@@ -1,5 +1,7 @@
+import hashlib
 import os
 import re
+import urllib.parse
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -16,7 +18,7 @@ def extract_image_links(
     Handles two syntaxes:
 
     * Obsidian wiki-style: ``![[image.png]]``
-    * Standard Markdown: ``![alt](path)`` (local files only; http/https skipped)
+    * Standard Markdown: ``![alt](path)`` (local files and remote http/https URLs)
 
     For wiki-style images the function follows the ordered ``wiki_image_lookup``
     strategies (e.g. ``same_dir``, ``relative_subdir``).  When omitted a
@@ -31,7 +33,8 @@ def extract_image_links(
     Returns:
         A list of ``(source_abs_path, target_rel_path, original_syntax)`` tuples.
 
-        * ``source_abs_path`` — absolute path where the image currently lives.
+        * ``source_abs_path`` — absolute local path for local images, or the
+          http/https URL for remote images.
         * ``target_rel_path`` — relative path under ``static/``
           (e.g. ``images/subdir/fig.png``).
         * ``original_syntax`` — the matched text in the original content
@@ -63,6 +66,11 @@ def extract_image_links(
         original_syntax = match.group(0)
 
         if url.startswith("http://") or url.startswith("https://"):
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:16]
+            ext = _guess_extension(url)
+            filename = f"{url_hash}{ext}"
+            target_rel = _make_target_path(note_rel_dir, filename)
+            results.append((url, target_rel, original_syntax))
             continue
 
         # Resolve relative to the note's directory
@@ -154,6 +162,15 @@ def _find_wiki_image(
                     return candidate
 
     return None
+
+
+def _guess_extension(url: str) -> str:
+    """Extract file extension from a URL, defaulting to ``.png``."""
+    path = urllib.parse.urlparse(url).path
+    ext = os.path.splitext(path)[1].lower()
+    if ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp"):
+        return ext
+    return ".png"
 
 
 def _make_target_path(note_rel_dir: str, image_basename: str) -> str:
