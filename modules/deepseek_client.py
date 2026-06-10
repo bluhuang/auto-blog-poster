@@ -75,7 +75,7 @@ def call_deepseek(content: str, config: dict) -> str:
     for attempt in range(max_retries):
         try:
             print(f"  DeepSeek API call (attempt {attempt + 1}/{max_retries}) ...")
-            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+            resp = requests.post(url, headers=headers, json=payload, timeout=120)
             if resp.status_code == 200:
                 data = resp.json()
                 result = data["choices"][0]["message"]["content"]
