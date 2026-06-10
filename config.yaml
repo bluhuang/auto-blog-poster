@@ -17,7 +17,7 @@ output:
 processing:
   cache_file: .hash_cache.json
   deepseek_api:
-    max_tokens: 16384
+    max_tokens: 65536
     model: deepseek-v4-flash
     prompt_template: 请对以下Markdown内容进行脱敏（删除公司名、人名等）、润色语句、删除所有与"面试"相关的内容。只输出处理后的纯Markdown内容，不要添加任何解释、不要添加"好的"、"以下是处理后的内容"等前缀或后缀，直接输出结果。\n\n原文：\n\n{content}
     system_prompt: '你是一个技术博客编辑助手。请对以下Markdown内容进行脱敏（删除公司名、人名等），并将所有与求职、面试、招聘、简历、offer、跳槽等相关的内容改写成纯粹的技术讨论，删除明显的求职字眼但保留技术实质。同时润色语句。严禁修改任何图片链接格式（包括
