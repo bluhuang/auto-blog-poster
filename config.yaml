@@ -45,6 +45,11 @@ processing:
   title_strip_prefix:
     enabled: true
     pattern: ^\d+\s*[-.]?\s*
+  title_strip_keywords:
+    enabled: true
+    patterns:
+      - '面试'
+      - '^z_'
 source:
   branch: main
   file_pattern: '*.md'
