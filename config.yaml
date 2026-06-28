@@ -25,31 +25,32 @@ processing:
 
       '
     temperature: 0.3
-  force_reprocess_all: true
+  force_reprocess_all: false
   image_download_dir: static/images/
   image_handling:
     enabled: true
     source_images_dir: attachments
     target_static_dir: static
-  personal_images:
-    avatar:
-      source: "../Avatar.JPG"
-      target: "avatar.jpg"
-    body_image:
-      source: "../汪汪队.jpg"
-      target: "dog-inline.jpg"
   image_processing: true
   incremental: true
-  local_vault_path: '/Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu obsidian'
+  local_vault_path: /Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu
+    obsidian
+  personal_images:
+    avatar:
+      source: ../Avatar.JPG
+      target: avatar.jpg
+    body_image:
+      source: ../汪汪队.jpg
+      target: dog-inline.jpg
   title_source: filename
-  title_strip_prefix:
-    enabled: true
-    pattern: ^\d+\s*[-.]?\s*
   title_strip_keywords:
     enabled: true
     patterns:
-      - '面试'
-      - '^z_'
+    - 面试
+    - ^z_
+  title_strip_prefix:
+    enabled: true
+    pattern: ^\d+\s*[-.]?\s*
 source:
   branch: main
   file_pattern: '*.md'
