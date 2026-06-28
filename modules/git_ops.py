@@ -41,10 +41,9 @@ def pull_source_repo(config: dict) -> Path:
         print(f"Removing previous clone: {temp_dir}")
         shutil.rmtree(temp_dir)
 
-    print(f"Shallow cloning {repository} (branch={branch}, sparse)...")
+    print(f"Cloning {repository} (branch={branch}, full history)...")
     clone_cmd = [
         "git", "clone",
-        "--depth", "1",
         "--branch", branch,
         clone_url,
         temp_dir,
@@ -52,28 +51,7 @@ def pull_source_repo(config: dict) -> Path:
     git_ver = _git_version()
     if git_ver >= (2, 25):
         clone_cmd.insert(2, "--filter=blob:none")
-        clone_cmd.insert(3, "--sparse")
     subprocess.run(clone_cmd, check=True, timeout=120)
-
-    if git_ver >= (2, 25):
-        print(f"Setting sparse-checkout to: {notes_subdir}, .obsidian")
-        subprocess.run(
-            ["git", "-C", temp_dir, "sparse-checkout", "set",
-             notes_subdir, ".obsidian"],
-            check=False, timeout=30,
-        )
-
-        source_images = (
-            config.get("processing", {})
-            .get("image_handling", {})
-            .get("source_images_dir", "")
-        )
-        if source_images:
-            print(f"  Adding to sparse-checkout: {source_images}")
-            subprocess.run(
-                ["git", "-C", temp_dir, "sparse-checkout", "add", source_images],
-                check=False, timeout=30,
-            )
 
     notes_path = os.path.join(temp_dir, notes_subdir)
     if not os.path.isdir(notes_path):

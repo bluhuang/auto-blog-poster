@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -221,6 +222,47 @@ def get_files_to_process(
     return to_process, to_delete
 
 
+def _compute_dates(
+    config: dict, source_path: str, rel_path: str
+) -> Tuple[str, str]:
+    """Compute ``date`` (creation) and ``lastmod`` (modification) for a note.
+
+    Priority for ``date``:
+        1. git first-commit time (requires source repo dir)
+        2. ``.file_times.json`` mtime entry (if present)
+        3. local vault file ctime/mtime
+        4. current time (fallback)
+
+    Priority for ``lastmod``:
+        1. ``.file_times.json`` mtime entry (if present)
+        2. local vault file ctime/mtime
+        3. same as ``date`` (fallback)
+
+    Returns:
+        ``(date_val, lastmod_val)`` as ISO-8601 strings.
+    """
+    mtime_val = _get_date_from_file_times(config, rel_path)
+    if mtime_val is None:
+        mtime_val = get_local_file_time(config, rel_path)
+    date_val = mtime_val
+    try:
+        git_root = config.get("_source_repo_dir", "")
+        if git_root and os.path.isdir(os.path.join(git_root, ".git")):
+            file_rel = os.path.relpath(source_path, git_root)
+            git_first = get_file_first_commit_time(git_root, file_rel)
+            if git_first:
+                date_val = git_first
+    except Exception:
+        pass
+    if date_val is None:
+        date_val = datetime.now(tz=timezone.utc).astimezone().strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        )
+    if mtime_val is None:
+        mtime_val = date_val
+    return date_val, mtime_val
+
+
 def process_single_note(
     source_path: str,
     rel_path: str,
@@ -377,26 +419,7 @@ def process_single_note(
         lines.append(f"author: \"{author}\"")
 
     # Compute date (creation) and lastmod (modification)
-    # date:  git first-commit → .file_times.json → local vault → today
-    # lastmod: .file_times.json → local vault → date
-    mtime_val = _get_date_from_file_times(config, rel_path)
-    if mtime_val is None:
-        mtime_val = get_local_file_time(config, rel_path)
-    date_val = mtime_val
-    try:
-        source_repo_dir = config.get("_source_repo_dir", "")
-        if source_repo_dir:
-            repo_path = os.path.dirname(source_repo_dir)
-            file_rel = os.path.relpath(source_path, repo_path)
-            git_first = get_file_first_commit_time(repo_path, file_rel)
-            if git_first:
-                date_val = git_first
-    except Exception:
-        pass
-    if date_val is None:
-        date_val = datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
-    if mtime_val is None:
-        mtime_val = date_val
+    date_val, mtime_val = _compute_dates(config, source_path, rel_path)
     lines.append(f"date: {date_val}")
     lines.append(f"lastmod: {mtime_val}")
 
@@ -413,6 +436,53 @@ def process_single_note(
         f.write(processed)
 
     print(f"  -> wrote {dest_path}")
+    return True
+
+
+def _lightweight_date_update(
+    content_path: str, config: dict, source_path: str, rel_path: str
+) -> bool:
+    """Update ``date`` and ``lastmod`` in the front matter of an already
+    processed content file, without invoking DeepSeek.
+
+    This is used for files whose content hash has not changed — their
+    generated content stays the same but the front matter timestamps
+    need to be refreshed from the source (git or vault).
+
+    Returns ``True`` if the file was updated, ``False`` on error.
+    """
+    if not os.path.isfile(content_path):
+        return False
+    try:
+        date_val, mtime_val = _compute_dates(config, source_path, rel_path)
+    except Exception:
+        return False
+
+    try:
+        with open(content_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except OSError:
+        return False
+
+    if not content.startswith("---"):
+        return False
+
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return False
+
+    fm = content[3:end_idx]
+    body = content[end_idx + 3:]
+
+    fm = re.sub(r"^date:.*$", f"date: {date_val}", fm, flags=re.MULTILINE)
+    fm = re.sub(r"^lastmod:.*$", f"lastmod: {mtime_val}", fm, flags=re.MULTILINE)
+
+    new_content = "---" + fm + "---" + body
+    try:
+        with open(content_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+    except OSError:
+        return False
     return True
 
 
@@ -438,8 +508,20 @@ def process_all_notes(
         deepseek_client_func: Callable ``(content: str, config: dict) -> str``.
         hash_cache_path: Path to the hash cache JSON file.
     """
-    # Expose source repo path for Git-timestamp lookups
-    config["_source_repo_dir"] = source_root
+    # Expose source repo path for Git-timestamp lookups.
+    # source_root is the notes subdirectory; walk up to find the actual
+    # git repository root (where .git lives).
+    git_root = os.path.dirname(os.path.abspath(source_root))
+    while git_root and not os.path.isdir(os.path.join(git_root, ".git")):
+        parent = os.path.dirname(git_root)
+        if parent == git_root:
+            git_root = ""
+            break
+        git_root = parent
+    if git_root:
+        config["_source_repo_dir"] = git_root
+    else:
+        config["_source_repo_dir"] = os.path.abspath(source_root)
 
     # Auto-detect wiki_image_lookup: explicit config takes priority;
     # otherwise generate rules from .obsidian/app.json.
@@ -488,6 +570,23 @@ def process_all_notes(
             if os.path.isfile(dest_path):
                 os.remove(dest_path)
                 print(f"Deleted: {dest_path}")
+
+    # Lightweight date update for unchanged files (no DeepSeek cost).
+    # Their content stays the same but front matter timestamps are
+    # refreshed from the source (git log or vault mtimes).
+    all_current = set(scan_md_files(source_root))
+    unchanged = sorted(all_current - set(to_process))
+    if unchanged:
+        print(f"Updating front matter dates for {len(unchanged)} "
+              f"unchanged file(s) ...")
+        updated = 0
+        for rel_path in unchanged:
+            source_path = os.path.join(source_root, rel_path)
+            dest_path = os.path.join(content_dir, rel_path)
+            if _lightweight_date_update(dest_path, config, source_path, rel_path):
+                updated += 1
+        if updated:
+            print(f"  Updated {updated} file(s)")
 
     # Ensure every content subdirectory has an _index.md so Hugo treats
     # them as proper sections (needed for tree-nav recursion).
@@ -652,30 +751,88 @@ def _generate_file_times_cache(config: dict) -> None:
     """Scan the local vault (if accessible) and persist creation times for
     all ``.md`` files as ``.file_times.json``.
 
-    This file is synced to the ``processed-cache`` branch so that CI
-    runs can use the same timestamps.
+    In CI (no local vault), falls back to using ``git log`` on the cloned
+    source repository to extract per-file last-modification dates.
+
+    The generated file is synced to the ``processed-cache`` branch so that
+    subsequent runs (CI and local) can use the same timestamps.
     """
     vault = os.getenv("OBSIDIAN_VAULT_PATH") or ""
     if not vault:
         vault = config.get("processing", {}).get("local_vault_path", "")
-    if not vault or not os.path.isdir(vault):
-        print("Local vault not found; skipping .file_times.json generation")
+
+    if vault and os.path.isdir(vault):
+        print(f"Generating .file_times.json from vault: {vault}")
+        times: Dict[str, str] = {}
+        for filepath in Path(vault).rglob("*.md"):
+            rel = filepath.relative_to(vault).as_posix()
+            try:
+                ts = filepath.stat().st_mtime
+            except OSError:
+                ts = filepath.stat().st_ctime
+            dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
+            times[rel] = dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+        with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
+            json.dump(times, f, indent=2, ensure_ascii=False)
+        print(f"  Wrote {len(times)} entries to {_FILE_TIMES_PATH}")
         return
 
-    print(f"Generating .file_times.json from vault: {vault}")
-    times: Dict[str, str] = {}
-    for filepath in Path(vault).rglob("*.md"):
-        rel = filepath.relative_to(vault).as_posix()
-        try:
-            ts = filepath.stat().st_mtime
-        except OSError:
-            ts = filepath.stat().st_ctime
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-        times[rel] = dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+    # CI fallback: use git log on the cloned source repository
+    source_repo_dir = config.get("_source_repo_dir", "")
+    if not source_repo_dir or not os.path.isdir(os.path.join(source_repo_dir, ".git")):
+        print("No local vault or source repo (.git not found); "
+              "skipping .file_times.json generation")
+        return
 
-    with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
-        json.dump(times, f, indent=2, ensure_ascii=False)
-    print(f"  Wrote {len(times)} entries to {_FILE_TIMES_PATH}")
+    notes_subdir = config.get("source", {}).get("notes_subdir", "")
+    print(f"Generating .file_times.json from git log (repo: {source_repo_dir}) ...")
+    times: Dict[str, str] = {}
+    try:
+        result = subprocess.run(
+            ["git", "-C", source_repo_dir, "log",
+             "--name-only", "--format=%ai"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode == 0:
+            current_date: Optional[str] = None
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line:
+                    current_date = None
+                    continue
+                # ISO date line: "2026-06-27 14:23:39 +0800"
+                if re.match(r"^\d{4}-\d{2}-\d{2}\s", line) and ":" in line:
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        tz = parts[2].replace(":", "")
+                        current_date = f"{parts[0]}T{parts[1]}{tz}"
+                    else:
+                        current_date = line
+                    continue
+                if current_date and line.endswith(".md"):
+                    # Only record the FIRST (most recent) occurrence
+                    if notes_subdir and line.startswith(notes_subdir + "/"):
+                        rel = line
+                    elif notes_subdir:
+                        # File not in notes_subdir — skip
+                        continue
+                    else:
+                        rel = line
+                    if rel not in times:
+                        times[rel] = current_date
+        else:
+            print(f"  git log failed (rc={result.returncode}), skipping")
+            return
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  git log failed: {e}, skipping")
+        return
+
+    if times:
+        with open(_FILE_TIMES_PATH, "w", encoding="utf-8") as f:
+            json.dump(times, f, indent=2, ensure_ascii=False)
+        print(f"  Wrote {len(times)} entries to {_FILE_TIMES_PATH}")
+    else:
+        print("  No .md files found via git log; .file_times.json not written")
 
 
 def copy_personal_images(config: dict) -> None:
