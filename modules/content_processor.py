@@ -798,7 +798,6 @@ def _generate_file_times_cache(config: dict) -> None:
             for line in result.stdout.splitlines():
                 line = line.strip()
                 if not line:
-                    current_date = None
                     continue
                 # ISO date line: "2026-06-27 14:23:39 +0800"
                 if re.match(r"^\d{4}-\d{2}-\d{2}\s", line) and ":" in line:
