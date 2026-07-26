@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -23,7 +24,7 @@ from modules.structured_content import (
     validate_math_delimiters,
 )
 
-PROCESSING_VERSION = "section-actions-v4"
+PROCESSING_VERSION = "section-actions-v5"
 
 
 def scan_md_files(root_dir: str) -> List[str]:
@@ -372,17 +373,32 @@ def process_single_note(
     if protector.items:
         print(f"  [content] protected {len(protector.items)} structured span(s)")
 
-    # 3. Call DeepSeek API (with placeholder-protected content)
-    processed = deepseek_client_func(content_to_send, config)
-    if not processed:
-        print(
-            f"  WARNING: DeepSeek API returned empty result for {rel_path}, "
-            f"using unprocessed content as fallback."
-        )
-        processed = content_to_send
+    # 3. Call DeepSeek and treat a structurally corrupt successful response as
+    # retryable. API-level retries alone cannot recover deleted placeholders.
+    max_structure_attempts = int(config.get("error", {}).get("max_retries", 3))
+    processed = ""
+    for attempt in range(max_structure_attempts):
+        response = deepseek_client_func(content_to_send, config)
+        if not response:
+            print(
+                f"  WARNING: DeepSeek API returned empty result for {rel_path}, "
+                f"using unprocessed content as fallback."
+            )
+            response = content_to_send
+        try:
+            processed = protector.restore(response)
+            break
+        except ValueError as exc:
+            if attempt == max_structure_attempts - 1:
+                raise
+            wait_seconds = 2 ** attempt
+            print(
+                "  [content] structured response invalid "
+                f"({exc}); retrying in {wait_seconds}s ..."
+            )
+            time.sleep(wait_seconds)
 
-    # 4. Restore protected structures and verify exact placeholder integrity.
-    processed = protector.restore(processed)
+    # 4. Normalize restored structures and validate math integrity.
     processed = normalize_math_delimiters(processed)
     validate_math_delimiters(processed)
     print(f"  [content] restored {len(protector.items)} structured span(s)")
