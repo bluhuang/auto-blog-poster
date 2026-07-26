@@ -23,7 +23,7 @@ from modules.structured_content import (
     validate_math_delimiters,
 )
 
-PROCESSING_VERSION = "section-actions-v2"
+PROCESSING_VERSION = "section-actions-v3"
 
 
 def scan_md_files(root_dir: str) -> List[str]:
