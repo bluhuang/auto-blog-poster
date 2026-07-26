@@ -1,0 +1,8 @@
+{{- $opts := dict "output" "htmlAndMathml" "displayMode" (eq .Type "block") "strict" "ignore" -}}
+{{- with try (transform.ToMath .Inner $opts) -}}
+  {{- with .Err -}}
+    {{- errorf "Unable to render math at %s: %s" $.Position . -}}
+  {{- else -}}
+    {{- .Value -}}
+  {{- end -}}
+{{- end -}}

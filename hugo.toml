@@ -44,6 +44,11 @@ defaultContentLanguageInSubdir = false
     maxAge = "720h"
 
 [markup]
+  [markup.goldmark.extensions.passthrough]
+    enable = true
+    [markup.goldmark.extensions.passthrough.delimiters]
+      block = [['\[', '\]'], ['$$', '$$']]
+      inline = [['\(', '\)'], ['$', '$']]
   [markup.goldmark.renderer]
     unsafe = true
   [markup.highlight]
@@ -93,7 +98,7 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "css/apple-overrides.css"
 
-# KaTeX
+# KaTeX CSS for build-time transform.ToMath output (HTML + MathML).
 [[params.plugins.css]]
   link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
   attributes = 'integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rl+OelTgXHG+M0E5R2T7LG0" crossorigin="anonymous"'
@@ -125,11 +130,4 @@ defaultContentLanguageInSubdir = false
   lazy = true
 [[params.plugins.js]]
   link = "plugins/youtube-lite.js"
-  lazy = true
-
-[[params.plugins.js]]
-  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
-  lazy = false
-[[params.plugins.js]]
-  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   lazy = true
