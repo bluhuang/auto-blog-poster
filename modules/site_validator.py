@@ -7,6 +7,7 @@ import socketserver
 import threading
 from pathlib import Path
 from typing import List
+from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -57,6 +58,8 @@ def _validate_in_browser(config: dict) -> None:
     host = validation_cfg.get("host", "127.0.0.1")
     port = int(validation_cfg.get("port", 1314))
     timeout_ms = int(validation_cfg.get("browser_timeout_ms", 30000))
+    image_check_paths = validation_cfg.get("image_check_paths", [])
+    published_origin = validation_cfg.get("published_origin", "").rstrip("/")
     public_dir = Path(validation_cfg.get("public_dir", "public"))
     base_url = f"http://{host}:{port}"
     base_path = "/" + validation_cfg.get("base_path", "").strip("/")
@@ -75,6 +78,13 @@ def _validate_in_browser(config: dict) -> None:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
+            if published_origin:
+                page.route(
+                    f"{published_origin}/**",
+                    lambda route: route.continue_(
+                        url=f"{base_url}{urlparse(route.request.url).path}"
+                    ),
+                )
             urls = []
             for html_path in public_dir.rglob("*.html"):
                 relative = html_path.relative_to(public_dir).as_posix()
@@ -94,13 +104,20 @@ def _validate_in_browser(config: dict) -> None:
                           node.querySelector('svg'))""",
                         timeout=timeout_ms,
                     )
-                broken_images = page.locator(
-                    ".content img[src*='/images/']"
-                ).evaluate_all(
-                    "imgs => imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.src)"
-                )
-                if broken_images:
-                    raise RuntimeError(f"{url}: broken content images: {broken_images}")
+                page_path = urlparse(url).path
+                if any(
+                    page_path.endswith(check_path)
+                    for check_path in image_check_paths
+                ):
+                    broken_images = page.locator(
+                        ".content img[src*='/images/']"
+                    ).evaluate_all(
+                        "imgs => imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.src)"
+                    )
+                    if broken_images:
+                        raise RuntimeError(
+                            f"{url}: broken content images: {broken_images}"
+                        )
                 checked += 1
             browser.close()
         print(f"  Browser validation checked {checked} internal page(s)")
