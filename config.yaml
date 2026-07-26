@@ -78,6 +78,7 @@ source:
   owner: bluhuang
   repo: blu-obsidian
 validation:
+  base_path: /blogs-of-bluhuang
   browser_timeout_ms: 30000
   host: 127.0.0.1
   port: 1314

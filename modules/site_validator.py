@@ -1,9 +1,10 @@
 """Fail-fast validation for generated Markdown and browser-rendered HTML."""
 
+import functools
+import http.server
 import re
-import subprocess
-import time
-import urllib.request
+import socketserver
+import threading
 from pathlib import Path
 from typing import List
 
@@ -53,23 +54,24 @@ def validate_generated_site(config: dict) -> None:
 
 def _validate_in_browser(config: dict) -> None:
     validation_cfg = config.get("validation", {})
-    executable = config.get("hugo", {}).get("executable", "hugo")
     host = validation_cfg.get("host", "127.0.0.1")
     port = int(validation_cfg.get("port", 1314))
     timeout_ms = int(validation_cfg.get("browser_timeout_ms", 30000))
     public_dir = Path(validation_cfg.get("public_dir", "public"))
     base_url = f"http://{host}:{port}"
-    process = subprocess.Popen(
-        [
-            executable, "server", "--bind", host, "--port", str(port),
-            "--baseURL", f"{base_url}/", "--appendPort=false", "--renderToMemory",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
+    base_path = "/" + validation_cfg.get("base_path", "").strip("/")
+    if base_path == "/":
+        base_path = ""
+    site_base_url = f"{base_url}{base_path}"
+    handler = functools.partial(
+        _QuietStaticHandler,
+        directory=str(public_dir.resolve()),
+        mount_path=base_path,
     )
+    server = _StaticServer((host, port), handler)
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
     try:
-        _wait_for_server(process, base_url, timeout_ms)
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
@@ -77,11 +79,11 @@ def _validate_in_browser(config: dict) -> None:
             for html_path in public_dir.rglob("*.html"):
                 relative = html_path.relative_to(public_dir).as_posix()
                 if relative == "index.html":
-                    urls.append(f"{base_url}/")
+                    urls.append(f"{site_base_url}/")
                 elif relative.endswith("/index.html"):
-                    urls.append(f"{base_url}/{relative[:-10]}")
+                    urls.append(f"{site_base_url}/{relative[:-10]}")
                 else:
-                    urls.append(f"{base_url}/{relative}")
+                    urls.append(f"{site_base_url}/{relative}")
             checked = 0
             for url in urls:
                 page.goto(url, wait_until="networkidle", timeout=timeout_ms)
@@ -103,25 +105,39 @@ def _validate_in_browser(config: dict) -> None:
             browser.close()
         print(f"  Browser validation checked {checked} internal page(s)")
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            process.kill()
+        server.shutdown()
+        server.server_close()
+        server_thread.join(timeout=10)
 
 
-def _wait_for_server(process: subprocess.Popen, base_url: str, timeout_ms: int) -> None:
-    deadline = time.monotonic() + timeout_ms / 1000
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            output = process.stdout.read() if process.stdout else ""
-            raise RuntimeError(f"Hugo validation server exited early:\n{output[-2000:]}")
-        try:
-            with urllib.request.urlopen(base_url, timeout=1):
-                return
-        except OSError:
-            time.sleep(0.2)
-    raise RuntimeError(f"Timed out waiting for validation server at {base_url}")
+class _QuietStaticHandler(http.server.SimpleHTTPRequestHandler):
+    """Serve the exact Hugo build artifact without noisy request logging."""
+
+    def __init__(
+        self, *args: object, mount_path: str = "", **kwargs: object
+    ) -> None:
+        self.mount_path = mount_path
+        super().__init__(*args, **kwargs)
+
+    def translate_path(self, path: str) -> str:
+        if self.mount_path and (
+            path == self.mount_path or path.startswith(f"{self.mount_path}/")
+        ):
+            path = path[len(self.mount_path):] or "/"
+        return super().translate_path(path)
+
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+
+class _StaticServer(http.server.ThreadingHTTPServer):
+    """Avoid reverse-DNS lookup while binding the local validation server."""
+
+    def server_bind(self) -> None:
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = str(host)
+        self.server_port = int(port)
 
 
 def _extract_main(html: str) -> str:
