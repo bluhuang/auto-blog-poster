@@ -128,6 +128,42 @@ def validate_math_delimiters(content: str) -> None:
 
 def normalize_math_delimiters(content: str) -> str:
     """Put display delimiters on canonical lines for Goldmark passthrough."""
+    fence_pattern = re.compile(
+        r"(?ms)^[ \t]*(`{3,}|~{3,})[^\n]*\n.*?^[ \t]*\1[ \t]*$"
+    )
+    chunks: List[str] = []
+    cursor = 0
+    for fence in fence_pattern.finditer(content):
+        chunks.append(_normalize_prose_math(content[cursor:fence.start()]))
+        chunks.append(fence.group(0))
+        cursor = fence.end()
+    chunks.append(_normalize_prose_math(content[cursor:]))
+    return "".join(chunks)
+
+
+def _normalize_prose_math(content: str) -> str:
+    """Normalize display math in prose, including Obsidian block quotes."""
+    display_pattern = re.compile(r"(?s)(\$\$|\\\[).*?(\$\$|\\\])")
+
+    # Work backwards so replacing a complete line range cannot invalidate later
+    # match offsets. A quoted display formula becomes a normal top-level block.
+    matches = list(display_pattern.finditer(content))
+    for match in reversed(matches):
+        line_start = content.rfind("\n", 0, match.start()) + 1
+        line_end_pos = content.find("\n", match.end())
+        line_end = len(content) if line_end_pos == -1 else line_end_pos
+        block = content[line_start:line_end]
+        lines = block.splitlines()
+        nonempty = [line for line in lines if line.strip()]
+        if nonempty and all(re.match(r"^[ \t]*>[ \t]?", line) for line in nonempty):
+            normalized = "\n".join(
+                re.sub(r"^[ \t]*>[ \t]?", "", line, count=1)
+                if line.strip()
+                else line
+                for line in lines
+            )
+            content = content[:line_start] + normalized + content[line_end:]
+
     content = re.sub(
         r"(?m)^[ \t]*(\$\$|\\\[|\\\])[ \t]*(?:  )?$",
         lambda match: match.group(1),
