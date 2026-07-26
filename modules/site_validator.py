@@ -79,11 +79,14 @@ def _validate_in_browser(config: dict) -> None:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
             if published_origin:
+                def serve_published_asset(route) -> None:
+                    local_url = f"{base_url}{urlparse(route.request.url).path}"
+                    response = route.fetch(url=local_url)
+                    route.fulfill(response=response)
+
                 page.route(
                     f"{published_origin}/**",
-                    lambda route: route.continue_(
-                        url=f"{base_url}{urlparse(route.request.url).path}"
-                    ),
+                    serve_published_asset,
                 )
             urls = []
             for html_path in public_dir.rglob("*.html"):
@@ -109,9 +112,20 @@ def _validate_in_browser(config: dict) -> None:
                     page_path.endswith(check_path)
                     for check_path in image_check_paths
                 ):
-                    broken_images = page.locator(
-                        ".content img[src*='/images/']"
-                    ).evaluate_all(
+                    images = page.locator(".content img[src*='/images/']")
+                    images.evaluate_all(
+                        """imgs => imgs.forEach(img => {
+                          img.loading = 'eager';
+                          img.scrollIntoView({block: 'center'});
+                        })"""
+                    )
+                    page.wait_for_function(
+                        """() => [...document.querySelectorAll(
+                          ".content img[src*='/images/']"
+                        )].every(img => img.complete)""",
+                        timeout=timeout_ms,
+                    )
+                    broken_images = images.evaluate_all(
                         "imgs => imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.src)"
                     )
                     if broken_images:
