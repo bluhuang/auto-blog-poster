@@ -16,6 +16,14 @@ from modules.git_ops import (
     get_attachment_folder,
 )
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
+from modules.section_processor import process_configured_sections
+from modules.structured_content import (
+    StructuredContentProtector,
+    normalize_math_delimiters,
+    validate_math_delimiters,
+)
+
+PROCESSING_VERSION = "section-actions-v1"
 
 
 def scan_md_files(root_dir: str) -> List[str]:
@@ -47,6 +55,16 @@ def compute_md5(file_path: str) -> str:
                 break
             md5.update(chunk)
     return md5.hexdigest()
+
+
+def compute_processing_hash(file_path: str) -> str:
+    """Hash source content together with the processing pipeline version."""
+    digest = hashlib.sha256()
+    digest.update(PROCESSING_VERSION.encode("utf-8"))
+    with open(file_path, "rb") as source_file:
+        while chunk := source_file.read(8192):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_hash_cache(cache_path: str) -> Dict[str, str]:
@@ -200,7 +218,7 @@ def get_files_to_process(
     new_cache: Dict[str, str] = {}
     for rel_path in sorted(current_files):
         abs_path = os.path.join(root_dir, rel_path)
-        new_hash = compute_md5(abs_path)
+        new_hash = compute_processing_hash(abs_path)
         new_cache[rel_path] = new_hash
         old_hash = old_cache.get(rel_path)
         if old_hash is None or old_hash != new_hash:
@@ -278,10 +296,10 @@ def process_single_note(
     1. Read raw content from the source file.
     2. Extract image links (wiki-style and Markdown), copy images to the
        ``static/`` directory, and build a replacement map.
-    3. Replace wiki image syntax (``![[...]]``) with inert placeholders
-       (``<!--IMG_N-->``) so DeepSeek will not mangle the URLs.
+    3. Protect formulas, code, Mermaid, images, and HTML with validated
+       placeholders so DeepSeek cannot rewrite structured content.
     4. Send the placeholder-protected content to the DeepSeek API.
-    5. Restore the actual ``![](/images/...)`` links from placeholders.
+    5. Verify and restore every placeholder; normalize display math delimiters.
     6. Write the final content to ``config.output.content_dir``, preserving
        the relative path structure of the original note.
 
@@ -306,9 +324,14 @@ def process_single_note(
     with open(source_path, "r", encoding="utf-8") as f:
         raw_content = f.read()
 
+    # Apply configurable section actions to a publication-only copy. The
+    # source note remains untouched.
+    raw_content = process_configured_sections(
+        raw_content, source_path, source_root, config
+    )
+
     # 2. Extract & copy images
     replacements: Dict[str, str] = {}
-    placeholder_map: Dict[str, str] = {}
     image_handling_cfg = config.get("processing", {}).get(
         "image_handling", {}
     )
@@ -343,27 +366,11 @@ def process_single_note(
             replacements[original_syntax] = (
                 f"![](/{urllib.parse.quote(target_rel)})"
             )
-            placeholder_map[original_syntax] = f"<!--IMG_{idx}-->"
-
-        # Also protect any ![[...]] that weren't found as real files,
-        # so raw wiki syntax never reaches DeepSeek.
-        all_wiki_pattern = re.compile(r'!\[\[([^\]]+)\]\]')
-        for match in all_wiki_pattern.finditer(raw_content):
-            syntax = match.group(0)
-            if syntax not in placeholder_map:
-                placeholder = f"<!--RAW_{len(placeholder_map)}-->"
-                placeholder_map[syntax] = placeholder  # identity restore = preserve original
-
-        # Protect all wiki links with placeholders before calling API
-        content_to_send = raw_content
-        if placeholder_map:
-            for old_syntax, placeholder in placeholder_map.items():
-                content_to_send = content_to_send.replace(old_syntax, placeholder)
-            print(f"  [image] protected {len(placeholder_map)} link(s) with placeholders")
-        else:
-            content_to_send = raw_content
-    else:
-        content_to_send = raw_content
+    validate_math_delimiters(raw_content)
+    protector = StructuredContentProtector(raw_content, replacements)
+    content_to_send = protector.protect()
+    if protector.items:
+        print(f"  [content] protected {len(protector.items)} structured span(s)")
 
     # 3. Call DeepSeek API (with placeholder-protected content)
     processed = deepseek_client_func(content_to_send, config)
@@ -374,14 +381,11 @@ def process_single_note(
         )
         processed = content_to_send
 
-    # 4. Restore image placeholders back to actual Markdown links
-    if placeholder_map:
-        for original_syntax, placeholder in placeholder_map.items():
-            processed = processed.replace(placeholder, replacements.get(original_syntax, original_syntax))
-        print(f"  [image] restored {len(placeholder_map)} link(s) from placeholders")
-
-    # Sanitize any raw ![[...]] that DeepSeek may have generated
-    processed = re.sub(r'!\[\[([^\]]+)\]\]', r'[\1]', processed)
+    # 4. Restore protected structures and verify exact placeholder integrity.
+    processed = protector.restore(processed)
+    processed = normalize_math_delimiters(processed)
+    validate_math_delimiters(processed)
+    print(f"  [content] restored {len(protector.items)} structured span(s)")
 
     # 5. Safeguard against Hugo YAML frontmatter mis-parsing
     if processed.startswith("---"):
@@ -613,7 +617,7 @@ def process_all_notes(
     mtimes: Dict[str, str] = {}
     for rel_path in scan_md_files(source_root):
         abs_path = os.path.join(source_root, rel_path)
-        new_cache[rel_path] = compute_md5(abs_path)
+        new_cache[rel_path] = compute_processing_hash(abs_path)
         mtime = get_local_file_time(config, rel_path)
         if mtime:
             mtimes[rel_path] = mtime

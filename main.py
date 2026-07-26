@@ -12,6 +12,7 @@ from modules import (
     deployer,
     git_ops,
     hugo_builder,
+    site_validator,
 )
 
 
@@ -46,14 +47,14 @@ def main() -> None:
         notes_subdir = config.get("source", {}).get("notes_subdir", "")
         vault_notes = os.path.join(local_vault, notes_subdir)
         if os.path.isdir(vault_notes):
-            print(f"[1/6] Using local vault: {vault_notes}")
+            print(f"[1/7] Using local vault: {vault_notes}")
             notes_root = Path(vault_notes)
             config["_source_repo_dir"] = local_vault
         else:
             print(f"WARNING: vault notes dir not found at {vault_notes}, falling back to git clone")
             notes_root = git_ops.pull_source_repo(config)
     else:
-        print("[1/6] Pulling source notes repository ...")
+        print("[1/7] Pulling source notes repository ...")
         try:
             notes_root = git_ops.pull_source_repo(config)
         except Exception as e:
@@ -62,7 +63,7 @@ def main() -> None:
 
     # ── Step 2: Restore cache from previous run ─────────────────────
     print()
-    print("[2/6] Restoring processed cache ...")
+    print("[2/7] Restoring processed cache ...")
     try:
         cache_persister.pull_cache(config)
     except Exception as e:
@@ -71,7 +72,7 @@ def main() -> None:
 
     # ── Step 3: Process notes (incremental) ─────────────────────────
     print()
-    print("[3/6] Processing notes (incremental) ...")
+    print("[3/7] Processing notes (incremental) ...")
     try:
         content_processor.process_all_notes(
             source_root=str(notes_root),
@@ -85,7 +86,7 @@ def main() -> None:
 
     # ── Step 3b: Generate navigation tree ───────────────────────────
     print()
-    print("[3b/6] Generating navigation tree ...")
+    print("[3b/7] Generating navigation tree ...")
     try:
         content_processor.generate_navigation_json()
     except Exception as e:
@@ -93,25 +94,34 @@ def main() -> None:
 
     # ── Step 4: Build Hugo site ────────────────────────────────────
     print()
-    print("[4/6] Building Hugo site ...")
+    print("[4/7] Building Hugo site ...")
     try:
         hugo_builder.build_site(config)
     except Exception as e:
         print(f"FATAL: Hugo build failed: {e}")
         sys.exit(1)
 
-    # ── Step 5: Deploy to GitHub Pages ─────────────────────────────
+    # ── Step 5: Validate rendered output ───────────────────────────
     print()
-    print("[5/6] Deploying to GitHub Pages ...")
+    print("[5/7] Validating rendered output ...")
+    try:
+        site_validator.validate_generated_site(config)
+    except Exception as e:
+        print(f"FATAL: Pre-deploy validation failed: {e}")
+        sys.exit(1)
+
+    # ── Step 6: Deploy to GitHub Pages ─────────────────────────────
+    print()
+    print("[6/7] Deploying to GitHub Pages ...")
     try:
         deployer.deploy(config)
     except Exception as e:
         print(f"FATAL: Deployment failed: {e}")
         sys.exit(1)
 
-    # ── Step 6: Persist cache for next run ─────────────────────────
+    # ── Step 7: Persist cache for next run ─────────────────────────
     print()
-    print("[6/6] Saving processed cache ...")
+    print("[7/7] Saving processed cache ...")
     try:
         cache_persister.push_cache(config)
     except Exception as e:

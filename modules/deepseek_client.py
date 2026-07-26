@@ -51,6 +51,10 @@ def call_deepseek(content: str, config: dict) -> str:
         "你是一个专业的博客编辑器。"
         "不要修改任何图片链接语法，保持 ![alt](url) 和 ![[filename]] 格式原样。",
     )
+    system_prompt += (
+        "\n凡是形如 @@PROTECTED_[A-F0-9]{12}_[0-9]{4}@@ 的占位符，"
+        "必须逐字保留，禁止修改、删除、复制、排序或另起一行。"
+    )
     user_message = prompt_template.replace("{content}", content)
 
     url = "https://api.deepseek.com/v1/chat/completions"

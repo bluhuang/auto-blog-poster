@@ -41,22 +41,7 @@
   integrity="{{ $scriptsLazy.Data.Integrity }}"
   src="{{ $scriptsLazy.RelPermalink }}"></script>
 
-<!-- KaTeX auto-render init -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    if (typeof renderMathInElement === "function") {
-      renderMathInElement(document.querySelector(".content"), {
-        delimiters: [
-          { left: "$$", right: "$$", display: true },
-          { left: "$", right: "$", display: false },
-          { left: "\\[", right: "\\]", display: true },
-          { left: "\\(", right: "\\)", display: false }
-        ],
-        throwOnError: false
-      });
-    }
-  });
-</script>
+<script type="module" src="{{ "js/mermaid-init.js" | relURL }}"></script>
 
 <!-- progressive web app -->
 {{ partialCached "pwa.html" . }}

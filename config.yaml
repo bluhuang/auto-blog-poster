@@ -21,7 +21,7 @@ processing:
     model: deepseek-v4-flash
     prompt_template: 请对以下Markdown内容进行脱敏（删除公司名、人名等）、润色语句、删除所有与"面试"相关的内容。只输出处理后的纯Markdown内容，不要添加任何解释、不要添加"好的"、"以下是处理后的内容"等前缀或后缀，直接输出结果。\n\n原文：\n\n{content}
     system_prompt: '你是一个技术博客编辑助手。请对以下Markdown内容进行脱敏（删除公司名、人名等），并将所有与求职、面试、招聘、简历、offer、跳槽等相关的内容改写成纯粹的技术讨论，删除明显的求职字眼但保留技术实质。同时润色语句。严禁修改任何图片链接格式（包括
-      ![[...]]、<!--IMG_...--> 和 ![](...)），保持原样。只输出处理后的纯Markdown内容，不要添加任何解释或前缀。
+      ![[...]] 和 ![](...)），保持原样。所有 @@PROTECTED_...@@ 占位符必须逐字保留，禁止修改、删除、复制、排序或重新排版。只输出处理后的纯Markdown内容，不要添加任何解释或前缀。
 
       '
     temperature: 0.3
@@ -33,6 +33,25 @@ processing:
     target_static_dir: static
   image_processing: true
   incremental: true
+  code_execution:
+    auto_map_windows_notes_root: true
+    environment:
+      MPLBACKEND: Agg
+  section_rules:
+  - name: matplotlib_code
+    enabled: true
+    match:
+      level: 1
+      title: 'TAG: Matplot code'
+      case_sensitive: false
+    actions:
+    - type: execute_code
+      language: python
+      fence_languages:
+      - python
+      - run-python
+      timeout_seconds: 120
+    - type: exclude_from_blog
   local_vault_path: /Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu
     obsidian
   personal_images:
@@ -58,3 +77,8 @@ source:
   notes_subdir: 2 Notes
   owner: bluhuang
   repo: blu-obsidian
+validation:
+  browser_timeout_ms: 30000
+  host: 127.0.0.1
+  port: 1314
+  public_dir: public
