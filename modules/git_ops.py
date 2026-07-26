@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import subprocess
+import urllib.parse
 from pathlib import Path
 from typing import Optional
 
@@ -34,7 +35,7 @@ def pull_source_repo(config: dict) -> Path:
         raise ValueError("Missing GH_PAT environment variable")
 
     temp_dir = os.path.join(".temp", "source_repo")
-    clone_url = f"https://{token}@github.com/{repository}.git"
+    clone_url = _authenticated_clone_url(repository, token)
 
     # Always start fresh to ensure consistent shallow-clone state
     if os.path.isdir(temp_dir):
@@ -51,7 +52,14 @@ def pull_source_repo(config: dict) -> Path:
     git_ver = _git_version()
     if git_ver >= (2, 25):
         clone_cmd.insert(2, "--filter=blob:none")
-    subprocess.run(clone_cmd, check=True, timeout=120)
+    try:
+        subprocess.run(clone_cmd, check=True, timeout=120)
+    except subprocess.CalledProcessError as exc:
+        # Do not include the authenticated URL (and therefore GH_PAT) in the
+        # exception propagated to CI logs.
+        raise RuntimeError(
+            f"Failed to clone private source repository {repository}"
+        ) from exc
 
     notes_path = os.path.join(temp_dir, notes_subdir)
     if not os.path.isdir(notes_path):
@@ -59,6 +67,15 @@ def pull_source_repo(config: dict) -> Path:
 
     print(f"Source notes ready at: {notes_path}")
     return Path(os.path.abspath(notes_path))
+
+
+def _authenticated_clone_url(repository: str, token: str) -> str:
+    """Build GitHub's documented PAT-over-HTTPS clone URL."""
+    encoded_token = urllib.parse.quote(token, safe="")
+    return (
+        f"https://x-access-token:{encoded_token}@github.com/"
+        f"{repository}.git"
+    )
 
 
 def push_output_repo(output_path: Path, config: dict) -> bool:
