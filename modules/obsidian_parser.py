@@ -48,7 +48,9 @@ def extract_image_links(
     # 1) Obsidian wiki-style: ![[filename]]
     wiki_pattern = re.compile(r"!\[\[([^\]]+)\]\]")
     for match in wiki_pattern.finditer(content):
-        filename = match.group(1).strip()
+        # Obsidian embeds may carry display options, e.g. ``![[plot.png|395]]``.
+        # The option is not part of the filename and must never reach lookup.
+        filename = match.group(1).split("|", 1)[0].strip()
         original_syntax = match.group(0)
 
         source_abs = _find_wiki_image(filename, source_dir, wiki_image_lookup)
@@ -64,7 +66,9 @@ def extract_image_links(
     # 2) Standard Markdown: ![alt](path)
     md_pattern = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
     for match in md_pattern.finditer(content):
-        url = match.group(2).strip()
+        # CommonMark permits angle-bracketed destinations for names containing
+        # spaces or non-ASCII punctuation.  They are syntax, not path bytes.
+        url = match.group(2).strip().strip("<>")
         original_syntax = match.group(0)
 
         if url.startswith("http://") or url.startswith("https://"):
@@ -75,13 +79,18 @@ def extract_image_links(
             results.append((url, target_rel, original_syntax))
             continue
 
-        # Resolve relative to the note's directory
+        # Resolve relative to the note first, then through the same Obsidian
+        # attachment-folder strategies used for wiki embeds.  A large portion
+        # of exported Markdown uses ``![alt](file.png)`` while Obsidian stores
+        # the file in the note's configured ``attachments/`` folder.
         if os.path.isabs(url):
             source_abs = url
         else:
             source_abs = os.path.normpath(os.path.join(source_dir, url))
 
         if not os.path.isfile(source_abs):
+            source_abs = _find_wiki_image(url, source_dir, wiki_image_lookup)
+        if source_abs is None or not os.path.isfile(source_abs):
             line = content.count("\n", 0, match.start()) + 1
             raise FileNotFoundError(
                 f"Missing Markdown image at {source_file_path}:{line}: {url}"
