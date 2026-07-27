@@ -24,7 +24,7 @@
 ### 常见错误禁止清单
 - **不要**因为 GitHub 私有仓库无法访问就放弃。你有本地 Vault，直接使用。
 - **不要**在恢复缓存时删除 `content/about.md` 等手动创建的页面。使用合并策略（保留本地独有文件）。
-- **不要**将 `content/`、`static/images/`、`.hash_cache.json`、`.file_times.json` 提交到 `auto-blog-poster` 仓库。它们只应持久化到 `blogs-of-bluhuang` 的 `processed-cache` 分支。
+- **不要**将 `content/`、`static/images/`、`.hash_cache.json`、`.deepseek_cache.json`、`.file_times.json` 提交到 `auto-blog-poster` 仓库。它们只应持久化到 `blogs-of-bluhuang` 的 `processed-cache` 分支。
 - **不要**擅自修改 `force_reprocess_all` 标志。在强制全量处理后，自动将其重置为 `false`。
 
 ## 测试与验证要求

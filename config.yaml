@@ -16,6 +16,7 @@ output:
   static_dir: static/
 processing:
   cache_file: .hash_cache.json
+  deepseek_cache_file: .deepseek_cache.json
   deepseek_api:
     max_tokens: 65536
     model: deepseek-v4-flash
