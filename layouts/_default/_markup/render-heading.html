@@ -1,0 +1,2 @@
+{{ $id := .Anchor | safeURL }}
+<h{{ .Level }} id="{{ $id }}">{{ .Text | safeHTML }}</h{{ .Level }}>

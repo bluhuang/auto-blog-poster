@@ -155,11 +155,23 @@ def lint_math_content(content: str) -> List[Tuple[int, str]]:
 
         # A single trailing slash in matrix-like environments is almost always
         # a broken row separator; LaTeX requires ``\\``.
-        if re.search(r"\\begin\{(?:bmatrix|pmatrix|matrix|vmatrix|Vmatrix)\}", body):
+        if re.search(
+            r"\\begin\{(?:bmatrix|pmatrix|matrix|vmatrix|Vmatrix|aligned|cases)\}",
+            body,
+        ):
+            env_match = re.search(
+                r"\\begin\{((?:b|p|v|V)?matrix|aligned|cases)\}",
+                body,
+            )
+            env_name = env_match.group(1) if env_match else "unknown"
             for index, line in enumerate(lines):
                 if re.search(r"(?<!\\)\\\s*$", line):
                     findings.append(
-                        (start_line + index + 1, "matrix row separator must be double backslash")
+                        (
+                            start_line + index + 1,
+                            f'"{env_name}" row separator must be double backslash \\\\ '
+                            f"(found: {line.strip()[-40:]!r})",
+                        )
                     )
 
         # Definitions split across lines frequently lose their equality sign

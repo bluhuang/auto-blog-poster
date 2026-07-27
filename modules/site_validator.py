@@ -104,6 +104,7 @@ def _validate_in_browser(config: dict) -> None:
                 for viewport, color_scheme in (
                     ({"width": 1440, "height": 1000}, "light"),
                     ({"width": 1440, "height": 1000}, "dark"),
+                    ({"width": 1280, "height": 900}, "light"),
                     ({"width": 390, "height": 844}, "light"),
                     ({"width": 390, "height": 844}, "dark"),
                 ):
@@ -165,12 +166,17 @@ def _assert_browser_page(page, url: str, timeout_ms: int) -> None:
     mermaid_errors = page.locator("pre.mermaid[data-mermaid-error='true']").count()
     if mermaid_errors:
         raise RuntimeError(f"{url}: {mermaid_errors} Mermaid diagram(s) failed")
-    if page.locator("main h1").count() != 1:
-        raise RuntimeError(f"{url}: expected exactly one H1")
+    is_article = page.locator(".article-reading-layout").count() > 0
+    if is_article:
+        if page.locator(".article-header h1").count() != 1:
+            raise RuntimeError(f"{url}: expected exactly one H1 in article header")
+    else:
+        if page.locator("main h1").count() < 1:
+            raise RuntimeError(f"{url}: expected at least one H1")
 
-    body_text = page.locator("main").inner_text()
+    article_content = page.locator(".article-content").inner_text()
     for token in ("$$", "![[", "@@PROTECTED"):
-        if token in body_text:
+        if token in article_content:
             raise RuntimeError(f"{url}: rendered body retains {token}")
 
     mathml_ok = page.locator(".katex-mathml").evaluate_all(
@@ -189,29 +195,63 @@ def _assert_browser_page(page, url: str, timeout_ms: int) -> None:
     if not mathml_ok or not katex_html_ok:
         raise RuntimeError(f"{url}: KaTeX MathML/HTML visibility is incorrect")
 
-    images = page.locator(".content img")
-    images.evaluate_all(
-        """imgs => imgs.forEach(img => {
-          img.loading = 'eager'; img.scrollIntoView({block: 'center'});
-        })"""
-    )
-    page.wait_for_function(
-        "() => [...document.querySelectorAll('.content img')].every(img => img.complete)",
-        timeout=timeout_ms,
-    )
-    broken_images = images.evaluate_all(
-        "imgs => imgs.filter(img => !img.naturalWidth || !img.alt.trim()).map(img => img.src)"
-    )
-    if broken_images:
-        raise RuntimeError(f"{url}: broken or missing-alt content images: {broken_images}")
+    if is_article:
+        images = page.locator(".article-content img")
+        images.evaluate_all(
+            """imgs => imgs.forEach(img => {
+              img.loading = 'eager'; img.scrollIntoView({block: 'center'});
+            })"""
+        )
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('.article-content img')].every(img => img.complete)",
+            timeout=timeout_ms,
+        )
+        broken_images = images.evaluate_all(
+            "imgs => imgs.filter(img => !img.naturalWidth || !img.alt.trim()).map(img => img.src)"
+        )
+        if broken_images:
+            raise RuntimeError(f"{url}: broken or missing-alt article images: {broken_images}")
 
-    missing_toc_targets = page.locator("#TableOfContents a[href^='#']").evaluate_all(
-        """links => links.filter(link => !document.getElementById(
-          decodeURIComponent(link.getAttribute('href').slice(1))
-        )).map(link => link.getAttribute('href'))"""
-    )
-    if missing_toc_targets:
-        raise RuntimeError(f"{url}: TOC target(s) missing: {missing_toc_targets}")
+        toc_links = page.locator("#article-toc-nav a[href^='#']")
+        page.wait_for_function(
+            """() => document.querySelectorAll('#article-toc-nav a[href^=\"#\"]').length > 0
+            || !document.querySelector('.article-content h2')""",
+            timeout=timeout_ms,
+        )
+        missing_toc_targets = toc_links.evaluate_all(
+            """links => links.filter(link => !document.getElementById(
+              decodeURIComponent(link.getAttribute('href').slice(1))
+            )).map(link => link.getAttribute('href'))"""
+        )
+        if missing_toc_targets:
+            raise RuntimeError(f"{url}: Article TOC target(s) missing: {missing_toc_targets}")
+
+        viewport = page.viewport_size
+        if viewport and viewport["width"] < 1320:
+            trigger_visible = page.locator("#article-toc-trigger").is_visible()
+            if not trigger_visible:
+                raise RuntimeError(f"{url}: TOC trigger button not visible at width {viewport['width']}")
+            if viewport["width"] >= 1280:
+                toc_sidebar_visible = page.locator("#article-toc-container").is_visible()
+                if toc_sidebar_visible:
+                    raise RuntimeError(f"{url}: fixed TOC sidebar should be hidden at width {viewport['width']}")
+    else:
+        images = page.locator(".content img")
+        images.evaluate_all(
+            """imgs => imgs.forEach(img => {
+              img.loading = 'eager'; img.scrollIntoView({block: 'center'});
+            })"""
+        )
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('.content img')].every(img => img.complete)",
+            timeout=timeout_ms,
+        )
+        broken_images = images.evaluate_all(
+            "imgs => imgs.filter(img => !img.naturalWidth || !img.alt.trim()).map(img => img.src)"
+        )
+        if broken_images:
+            raise RuntimeError(f"{url}: broken or missing-alt images: {broken_images}")
+
     if not page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"):
         raise RuntimeError(f"{url}: page has horizontal overflow")
 
@@ -254,7 +294,7 @@ class _StaticServer(http.server.ThreadingHTTPServer):
 
 
 def _extract_main(html: str) -> str:
-    match = re.search(r"(?is)<main\b[^>]*>(.*?)</main>", html)
+    match = re.search(r"(?is)<(?:main\b|article\b|div\s+class=\"article-reading-layout\")[^>]*>(.*?)</(?:main|article|div)>", html)
     return match.group(1) if match else html
 
 

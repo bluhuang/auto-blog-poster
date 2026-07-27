@@ -1,0 +1,639 @@
+/* === Article Reading Page === */
+
+.article-page {
+  --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  --label-primary: #1d1d1f;
+  --label-secondary: #6e6e73;
+  --separator-opaque: rgba(0, 0, 0, 0.12);
+  --separator: rgba(0, 0, 0, 0.08);
+  --secondary-bg: rgba(0, 0, 0, 0.03);
+  --card-radius-large: 16px;
+  --card-radius-medium: 14px;
+  --card-border: rgba(0, 0, 0, 0.10);
+  --card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  --toc-active-bg: rgba(0, 122, 255, 0.08);
+  --toc-active-color: #007AFF;
+  --header-height: 60px;
+}
+
+.dark .article-page {
+  --label-primary: #f5f5f7;
+  --label-secondary: #aeaeb2;
+  --separator-opaque: rgba(255, 255, 255, 0.12);
+  --separator: rgba(255, 255, 255, 0.08);
+  --secondary-bg: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.10);
+  --card-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 30px rgba(0, 0, 0, 0.42);
+  --toc-active-bg: rgba(10, 132, 255, 0.12);
+  --toc-active-color: #0A84FF;
+}
+
+/* === Reading Layout Container === */
+.article-reading-layout {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 40px 24px 80px;
+  font-family: var(--font-text);
+  color: var(--label-primary);
+}
+
+/* === Article Header === */
+.article-title {
+  font-size: 44px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: normal;
+  color: var(--label-primary);
+  margin: 0 0 16px 0;
+}
+
+.article-meta {
+  font-size: 13px;
+  color: var(--label-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+
+.article-meta-item {
+  color: var(--label-secondary);
+}
+
+.article-meta-item a {
+  color: var(--label-secondary);
+  text-decoration: none;
+}
+
+.article-meta-item a:hover {
+  color: var(--label-primary);
+}
+
+.article-meta-sep {
+  margin: 0 8px;
+  color: var(--separator-opaque);
+}
+
+.article-divider {
+  height: 1px;
+  background: var(--separator);
+  margin: 28px 0 48px;
+  border: none;
+}
+
+/* === Article Content Typography === */
+.article-content {
+  font-size: 17px;
+  line-height: 1.75;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--label-primary);
+}
+
+.article-content h1 {
+  font-size: 44px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.article-content h2 {
+  font-size: 30px;
+  line-height: 1.28;
+  font-weight: 600;
+  letter-spacing: normal;
+  margin: 64px 0 20px;
+  color: var(--label-primary);
+}
+
+.article-content h3 {
+  font-size: 22px;
+  line-height: 1.36;
+  font-weight: 600;
+  letter-spacing: normal;
+  margin: 40px 0 14px;
+  color: var(--label-primary);
+}
+
+.article-content h4 {
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: normal;
+  margin: 28px 0 10px;
+  color: var(--label-primary);
+}
+
+.article-content p {
+  margin-bottom: 20px;
+}
+
+.article-content a {
+  color: var(--toc-active-color, #007AFF);
+  text-decoration: none;
+}
+
+.article-content a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* === Inline Code === */
+.article-content :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--secondary-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  color: var(--label-primary);
+}
+
+/* === Blockquote === */
+.article-content blockquote {
+  margin: 28px 0 32px;
+  padding: 1px 0 1px 20px;
+  border-left: 2px solid var(--separator-opaque);
+  color: var(--label-secondary);
+  font-size: 16.5px;
+  line-height: 1.75;
+  font-style: normal;
+}
+
+.article-content blockquote strong {
+  color: var(--label-primary);
+  font-weight: 600;
+}
+
+.article-content blockquote p {
+  margin-bottom: 8px;
+}
+
+/* === Code Blocks (Real code) === */
+.article-content .highlight {
+  max-width: 100%;
+  margin: 28px 0 36px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--card-radius-medium);
+  background: #1c1c1e;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.article-content .highlight pre {
+  margin: 0;
+  padding: 20px 22px;
+  overflow-x: auto;
+  background: #1c1c1e;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.article-content .highlight pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* === Plain-text Code Blocks === */
+.article-content .code-block--text,
+.article-content .code-block--test,
+.article-content .code-block--txt,
+.article-content .code-block--plaintext {
+  color: var(--label-primary);
+  background: var(--secondary-bg);
+  border: 1px solid var(--separator);
+  border-radius: var(--card-radius-medium);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  margin: 28px 0 36px;
+}
+
+.article-content .code-block--text .highlight,
+.article-content .code-block--test .highlight,
+.article-content .code-block--txt .highlight,
+.article-content .code-block--plaintext .highlight {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.article-content .code-block--text pre,
+.article-content .code-block--test pre,
+.article-content .code-block--txt pre,
+.article-content .code-block--plaintext pre {
+  margin: 0;
+  padding: 20px 22px;
+  overflow-x: auto;
+  background: transparent !important;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--label-primary);
+}
+
+.article-content .code-block--text pre code,
+.article-content .code-block--test pre code,
+.article-content .code-block--txt pre code,
+.article-content .code-block--plaintext pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: var(--label-primary);
+}
+
+.article-content .code-block--text pre code span,
+.article-content .code-block--test pre code span,
+.article-content .code-block--txt pre code span,
+.article-content .code-block--plaintext pre code span {
+  color: var(--label-primary);
+}
+
+/* === Images === */
+.article-content img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 32px auto 40px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius-large);
+  background: var(--secondary-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.dark .article-content img {
+  background: transparent;
+}
+
+/* === Mermaid === */
+.article-content .mermaid {
+  margin: 32px 0 40px;
+  border-radius: var(--card-radius-medium);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 6px 18px rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.dark .article-content .mermaid {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.article-content .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* === Tables === */
+.article-content .table-wrap {
+  border-radius: var(--card-radius-medium);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  overflow-x: auto;
+  margin: 28px 0 36px;
+}
+
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.article-content thead {
+  border-bottom: 1px solid var(--separator);
+}
+
+.article-content th {
+  font-weight: 600;
+  color: var(--label-primary);
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.article-content td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--separator);
+  color: var(--label-secondary);
+}
+
+.article-content tr:last-child td {
+  border-bottom: none;
+}
+
+/* === KaTeX === */
+.article-content .katex-mathml {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.article-content .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2rem 0;
+  margin: 24px 0 30px;
+}
+
+/* === Card Hover (mouse only) === */
+@media (hover: hover) and (pointer: fine) {
+  .article-content img,
+  .article-content .highlight,
+  .article-content .code-block--text,
+  .article-content .code-block--test,
+  .article-content .code-block--txt,
+  .article-content .code-block--plaintext,
+  .article-content .mermaid,
+  .article-content .table-wrap {
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .article-content img:hover,
+  .article-content .highlight:hover,
+  .article-content .code-block--text:hover,
+  .article-content .code-block--test:hover,
+  .article-content .code-block--txt:hover,
+  .article-content .code-block--plaintext:hover,
+  .article-content .mermaid:hover,
+  .article-content .table-wrap:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-content img,
+  .article-content .highlight,
+  .article-content .code-block--text,
+  .article-content .code-block--test,
+  .article-content .code-block--txt,
+  .article-content .code-block--plaintext,
+  .article-content .mermaid,
+  .article-content .table-wrap {
+    transition: none !important;
+  }
+
+  .article-content img:hover,
+  .article-content .highlight:hover,
+  .article-content .code-block--text:hover,
+  .article-content .code-block--test:hover,
+  .article-content .code-block--txt:hover,
+  .article-content .code-block--plaintext:hover,
+  .article-content .mermaid:hover,
+  .article-content .table-wrap:hover {
+    transform: none !important;
+  }
+}
+
+/* === Tags === */
+.article-tags {
+  margin-top: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-tags-title {
+  font-size: 13px;
+  color: var(--label-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.article-tags ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.article-tags a {
+  display: block;
+  font-size: 12px;
+  color: var(--label-secondary);
+  background: var(--secondary-bg);
+  border-radius: 6px;
+  padding: 3px 10px;
+  text-decoration: none;
+}
+
+.article-tags a:hover {
+  color: var(--label-primary);
+  background: var(--separator);
+}
+
+/* === Fixed Right TOC (wide screens >= 1320px) === */
+.article-toc {
+  display: none;
+}
+
+@media (min-width: 1320px) {
+  .article-toc {
+    display: block;
+    position: fixed;
+    top: calc(var(--header-height) + 24px);
+    right: clamp(24px, 2.5vw, 40px);
+    width: clamp(232px, 18vw, 272px);
+    max-height: calc(100svh - var(--header-height) - 48px);
+    overflow-y: auto;
+    z-index: 40;
+  }
+
+  .article-toc-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-primary);
+    margin-bottom: 12px;
+    padding-left: 8px;
+    letter-spacing: normal;
+  }
+
+  .article-toc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .article-toc-nav a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--label-secondary);
+    text-decoration: none;
+    line-height: 1.45;
+    border-left: 2px solid transparent;
+    transition: background 150ms ease, color 150ms ease;
+  }
+
+  .article-toc-nav a.toc-h3 {
+    font-size: 12px;
+    padding-left: 20px;
+  }
+
+  .article-toc-nav a:hover {
+    color: var(--label-primary);
+    background: var(--secondary-bg);
+  }
+
+  .article-toc-nav a.toc-active {
+    color: var(--toc-active-color);
+    font-weight: 500;
+    background: var(--toc-active-bg);
+    border-left-color: var(--toc-active-color);
+  }
+
+  .article-toc-nav .toc-active .katex {
+    font-size: inherit;
+  }
+}
+
+/* === TOC Trigger Button (< 1320px) === */
+.article-toc-trigger {
+  display: none;
+}
+
+@media (max-width: 1319px) {
+  .article-toc-trigger {
+    display: flex;
+    position: fixed;
+    right: 16px;
+    bottom: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--separator-opaque);
+    background: var(--secondary-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    font-size: 18px;
+    color: var(--label-primary);
+  }
+
+  .dark .article-toc-trigger {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .article-toc-trigger::before {
+    content: "☰";
+  }
+}
+
+/* === TOC Drawer (mobile/narrow) === */
+.article-toc-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  max-width: 85vw;
+  height: 100svh;
+  background: var(--secondary-bg);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-left: 1px solid var(--separator-opaque);
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform 250ms ease;
+  overflow-y: auto;
+  padding: 20px 16px;
+}
+
+#article-toc-drawer[aria-hidden="false"] {
+  transform: translateX(0);
+}
+
+.article-toc-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.article-toc-drawer-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--label-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.article-toc-drawer-close:hover {
+  color: var(--label-primary);
+}
+
+.article-toc-drawer-nav a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--label-secondary);
+  text-decoration: none;
+  line-height: 1.5;
+}
+
+.article-toc-drawer-nav a.toc-h3 {
+  font-size: 13px;
+  padding-left: 20px;
+}
+
+.article-toc-drawer-nav a:hover {
+  color: var(--label-primary);
+  background: var(--separator);
+}
+
+.article-toc-drawer-nav a.toc-active {
+  color: var(--toc-active-color);
+  font-weight: 500;
+  background: var(--toc-active-bg);
+}
+
+/* === TOC Overlay === */
+.article-toc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 199;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+
+#article-toc-overlay[aria-hidden="false"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* === Code Block Wrapper (for render-codeblock hook) === */
+.article-content .code-block {
+  margin: 28px 0 36px;
+}

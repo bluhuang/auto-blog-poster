@@ -264,31 +264,30 @@ def _extract_first_h1(content: str) -> Optional[str]:
 
 
 def _plain_heading_text(text: str) -> str:
-    """Make formula-bearing headings readable before Goldmark creates anchors.
+    """Return a readable plain-text label for heading-comparison purposes only.
 
-    Headings are navigation labels, not mathematical content.  Removing their
-    delimiters avoids raw LaTeX in Hugo's generated TOC while keeping one
-    deterministic heading text for both the anchor and the TOC link.
+    The output of this function is **never** written into the final Markdown
+    body.  It is used solely to determine whether the first H1 duplicates the
+    front-matter title so that it can be removed.
     """
-    text = re.sub(r"\\\\\((.*?)\\\\\)|\$(.*?)\$", lambda m: m.group(1) or m.group(2) or "", text)
-    text = text.replace(r"\\times", "×").replace(r"\\cdot", "·")
-    text = re.sub(r"\\(?:text|operatorname)\{([^}]*)\}", r"\1", text)
-    text = re.sub(r"\\[A-Za-z]+", "", text)
-    text = re.sub(r"[{}]", "", text)
+    text = re.sub(r"\$[^\$]+\$", "", text)
+    text = re.sub(r"\\\[\s*.*?\s*\\\]", "", text)
+    text = re.sub(r"\\\(\s*.*?\s*\\\)", "", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
 def _normalize_headings(content: str, title: str) -> str:
-    """Remove a duplicated first H1 and normalize math from heading labels."""
+    """Remove a duplicated first H1 while preserving heading formulas.
+
+    Only the duplicate-first-H1 removal is applied.  All other heading content
+    (including inline math like ``$...$`` and ``\\(...\\)``) is passed through
+    unchanged so that KaTeX can render it in both the body and the article TOC.
+    """
     first_h1 = re.search(r"^(#)\s+(.+?)\s*$", content, re.MULTILINE)
     if first_h1 and _plain_heading_text(first_h1.group(2)) == _plain_heading_text(title):
         content = content[:first_h1.start()] + content[first_h1.end():]
         content = content.lstrip("\n")
-
-    def replace_heading(match: re.Match) -> str:
-        return f"{match.group(1)} {_plain_heading_text(match.group(2))}"
-
-    return re.sub(r"^(#{1,6})\s+(.+?)\s*$", replace_heading, content, flags=re.MULTILINE)
+    return content
 
 
 def _remap_cached_placeholders(response: str, protector: StructuredContentProtector) -> Optional[str]:
