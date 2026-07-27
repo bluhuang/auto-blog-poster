@@ -53,8 +53,10 @@ def extract_image_links(
 
         source_abs = _find_wiki_image(filename, source_dir, wiki_image_lookup)
         if source_abs is None:
-            print(f"  Warning: wiki image not found: {filename}")
-            continue
+            line = content.count("\n", 0, match.start()) + 1
+            raise FileNotFoundError(
+                f"Missing Obsidian image at {source_file_path}:{line}: {filename}"
+            )
 
         target_rel = _make_target_path(note_rel_dir, filename)
         results.append((source_abs, target_rel, original_syntax))
@@ -80,8 +82,10 @@ def extract_image_links(
             source_abs = os.path.normpath(os.path.join(source_dir, url))
 
         if not os.path.isfile(source_abs):
-            print(f"  Warning: markdown image not found: {url}")
-            continue
+            line = content.count("\n", 0, match.start()) + 1
+            raise FileNotFoundError(
+                f"Missing Markdown image at {source_file_path}:{line}: {url}"
+            )
 
         image_basename = os.path.basename(source_abs)
         target_rel = _make_target_path(note_rel_dir, image_basename)

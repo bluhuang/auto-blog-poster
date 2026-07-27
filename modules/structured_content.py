@@ -126,6 +126,72 @@ def validate_math_delimiters(content: str) -> None:
         raise ValueError(f"Unbalanced math delimiters: {', '.join(errors)}")
 
 
+def lint_math_content(content: str) -> List[Tuple[int, str]]:
+    """Return actionable, conservative LaTeX lint findings.
+
+    This intentionally detects only mechanical mistakes that make a formula
+    invalid or materially ambiguous.  It never changes mathematical meaning.
+    ``line`` is one-based and refers to the original Markdown source.
+    """
+    findings: List[Tuple[int, str]] = []
+    fence_pattern = re.compile(
+        r"(?ms)^[ \t]*(`{3,}|~{3,})[^\n]*\n.*?^[ \t]*\1[ \t]*$"
+    )
+    masked = list(content)
+    for match in fence_pattern.finditer(content):
+        for index in range(match.start(), match.end()):
+            if masked[index] != "\n":
+                masked[index] = " "
+    prose = "".join(masked)
+    block_pattern = re.compile(r"(?s)(?:\$\$(.*?)\$\$|\\\[(.*?)\\\])")
+    for match in block_pattern.finditer(prose):
+        body = match.group(1) if match.group(1) is not None else match.group(2)
+        start_line = prose.count("\n", 0, match.start()) + 1
+        lines = body.splitlines()
+        nonempty = [(index, line.strip()) for index, line in enumerate(lines) if line.strip()]
+        if not nonempty:
+            findings.append((start_line, "empty display formula"))
+            continue
+
+        # A single trailing slash in matrix-like environments is almost always
+        # a broken row separator; LaTeX requires ``\\``.
+        if re.search(r"\\begin\{(?:bmatrix|pmatrix|matrix|vmatrix|Vmatrix)\}", body):
+            for index, line in enumerate(lines):
+                if re.search(r"(?<!\\)\\\s*$", line):
+                    findings.append(
+                        (start_line + index + 1, "matrix row separator must be double backslash")
+                    )
+
+        # Definitions split across lines frequently lose their equality sign
+        # during editing.  Restrict this to clear function/operator/variable
+        # heads so ordinary standalone expressions are not rejected.
+        first_index, first = nonempty[0]
+        looks_like_head = bool(
+            re.match(
+                r"(?:\\operatorname\{[^}]+\}|[A-Za-z][A-Za-z_{}^\\]*\([^)]*\)|"
+                r"[A-Za-z][A-Za-z_{}^\\]*)$",
+                first,
+            )
+        )
+        if looks_like_head and len(nonempty) > 1:
+            second = nonempty[1][1]
+            if not re.match(r"(?:=|\\approx|\\equiv|\\coloneqq)", second):
+                findings.append(
+                    (start_line + first_index + 1, "formula definition is missing '='")
+                )
+    return findings
+
+
+def validate_math_lint(content: str) -> None:
+    """Raise a line-numbered error when conservative math lint finds issues."""
+    findings = lint_math_content(content)
+    if findings:
+        details = "; ".join(
+            f"line {line}: {message}" for line, message in findings[:20]
+        )
+        raise ValueError(f"LaTeX lint failed: {details}")
+
+
 def normalize_math_delimiters(content: str) -> str:
     """Put display delimiters on canonical lines for Goldmark passthrough."""
     fence_pattern = re.compile(
@@ -173,7 +239,11 @@ def _normalize_prose_math(content: str) -> str:
         pattern = re.compile(rf"(?s)({opening})\n?(.*?)(?:\n)?({closing})")
 
         def compact(match: re.Match) -> str:
-            inner = re.sub(r"\n[ \t]*\n+", "\n", match.group(2)).strip()
+            # Goldmark parses Markdown list/setext markers before it reaches
+            # a multi-line passthrough span.  Keep delimiter lines canonical
+            # but make the TeX body one physical line so leading ``+``, ``-``
+            # or ``=`` tokens can never split a display equation into HTML.
+            inner = re.sub(r"\s*\n\s*", " ", match.group(2)).strip()
             return f"{match.group(1)}\n{inner}\n{match.group(3)}"
 
         content = pattern.sub(compact, content)

@@ -176,6 +176,40 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* Build-time KaTeX renders accessible MathML plus visual HTML.  The MathML
+ * stays in the accessibility tree while KaTeX's visual representation is the
+ * only rendered copy.  Local layout guards keep long formulae contained on
+ * narrow screens without changing the site's visual design. */
+.content .katex-mathml {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.content .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2rem 0;
+}
+.content pre,
+.content .mermaid,
+.content .mermaid svg {
+  max-width: 100%;
+}
+.content .mermaid {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.content .mermaid svg {
+  height: auto;
+}
+
 /* === 9. 卡片容器 utility（让 blog-card 获得苹果感） === */
 .apple-card {
   background-color: var(--color-body, #FFFFFF);

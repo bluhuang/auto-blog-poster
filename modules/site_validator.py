@@ -6,7 +6,7 @@ import re
 import socketserver
 import threading
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
@@ -77,17 +77,11 @@ def _validate_in_browser(config: dict) -> None:
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page()
             if published_origin:
                 def serve_published_asset(route) -> None:
                     local_url = f"{base_url}{urlparse(route.request.url).path}"
                     response = route.fetch(url=local_url)
                     route.fulfill(response=response)
-
-                page.route(
-                    f"{published_origin}/**",
-                    serve_published_asset,
-                )
             urls = []
             for html_path in public_dir.rglob("*.html"):
                 relative = html_path.relative_to(public_dir).as_posix()
@@ -98,47 +92,128 @@ def _validate_in_browser(config: dict) -> None:
                 else:
                     urls.append(f"{site_base_url}/{relative}")
             checked = 0
-            for url in urls:
-                page.goto(url, wait_until="networkidle", timeout=timeout_ms)
-                if page.locator("pre.mermaid").count():
-                    page.wait_for_function(
-                        """() => [...document.querySelectorAll('pre.mermaid')]
-                        .every(node => node.dataset.mermaidRendered === 'true' &&
-                          node.querySelector('svg'))""",
-                        timeout=timeout_ms,
-                    )
-                page_path = urlparse(url).path
-                if any(
-                    page_path.endswith(check_path)
-                    for check_path in image_check_paths
+            requested_paths = validation_cfg.get("browser_test_paths", [])
+            test_urls = [
+                url for url in urls
+                if not requested_paths
+                or any(urlparse(url).path.endswith(path) for path in requested_paths)
+            ]
+            if not test_urls:
+                raise RuntimeError("Browser validation has no matching test page")
+            for url in test_urls:
+                for viewport, color_scheme in (
+                    ({"width": 1440, "height": 1000}, "light"),
+                    ({"width": 1440, "height": 1000}, "dark"),
+                    ({"width": 390, "height": 844}, "light"),
+                    ({"width": 390, "height": 844}, "dark"),
                 ):
-                    images = page.locator(".content img[src*='/images/']")
-                    images.evaluate_all(
-                        """imgs => imgs.forEach(img => {
-                          img.loading = 'eager';
-                          img.scrollIntoView({block: 'center'});
-                        })"""
+                    context = browser.new_context(
+                        viewport=viewport, color_scheme=color_scheme
                     )
-                    page.wait_for_function(
-                        """() => [...document.querySelectorAll(
-                          ".content img[src*='/images/']"
-                        )].every(img => img.complete)""",
-                        timeout=timeout_ms,
-                    )
-                    broken_images = images.evaluate_all(
-                        "imgs => imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.src)"
-                    )
-                    if broken_images:
-                        raise RuntimeError(
-                            f"{url}: broken content images: {broken_images}"
+                    if published_origin:
+                        context.route(
+                            f"{published_origin}/**", serve_published_asset
                         )
-                checked += 1
+                    page = context.new_page()
+                    console_errors: List[str] = []
+                    css_responses: List[Tuple[str, int]] = []
+                    third_party_404s: List[str] = []
+                    page.on(
+                        "console",
+                        lambda message: console_errors.append(message.text)
+                        if message.type == "error" else None,
+                    )
+                    page.on(
+                        "response",
+                        lambda response: (
+                            css_responses.append((response.url, response.status))
+                            if ".css" in response.url else None,
+                            third_party_404s.append(response.url)
+                            if response.status == 404 and "giscus.app/" in response.url else None,
+                        ),
+                    )
+                    page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                    _assert_browser_page(page, url, timeout_ms)
+                    if not any(status == 200 for _url, status in css_responses):
+                        raise RuntimeError(f"{url}: KaTeX CSS request did not succeed")
+                    relevant_console_errors = console_errors[
+                        len(third_party_404s):
+                    ] if all(
+                        error.startswith("Failed to load resource")
+                        for error in console_errors
+                    ) else console_errors
+                    if relevant_console_errors:
+                        raise RuntimeError(f"{url}: browser console errors: {console_errors}")
+                    context.close()
+                    checked += 1
             browser.close()
-        print(f"  Browser validation checked {checked} internal page(s)")
+        print(f"  Browser validation checked {checked} desktop/mobile light/dark page view(s)")
     finally:
         server.shutdown()
         server.server_close()
         server_thread.join(timeout=10)
+
+
+def _assert_browser_page(page, url: str, timeout_ms: int) -> None:
+    """Assert one fully rendered browser page before deployment."""
+    if page.locator("pre.mermaid").count():
+        page.wait_for_function(
+            """() => [...document.querySelectorAll('pre.mermaid')].every(node =>
+              node.dataset.mermaidRendered === 'true' && node.querySelector('svg'))""",
+            timeout=timeout_ms,
+        )
+    mermaid_errors = page.locator("pre.mermaid[data-mermaid-error='true']").count()
+    if mermaid_errors:
+        raise RuntimeError(f"{url}: {mermaid_errors} Mermaid diagram(s) failed")
+    if page.locator("main h1").count() != 1:
+        raise RuntimeError(f"{url}: expected exactly one H1")
+
+    body_text = page.locator("main").inner_text()
+    for token in ("$$", "![[", "@@PROTECTED"):
+        if token in body_text:
+            raise RuntimeError(f"{url}: rendered body retains {token}")
+
+    mathml_ok = page.locator(".katex-mathml").evaluate_all(
+        """nodes => nodes.every(node => {
+          const style = getComputedStyle(node);
+          const rect = node.getBoundingClientRect();
+          return style.position === 'absolute' && rect.width <= 1 && rect.height <= 1;
+        })"""
+    )
+    katex_html_ok = page.locator(".katex-html").evaluate_all(
+        """nodes => nodes.every(node => {
+          const style = getComputedStyle(node);
+          return style.display !== 'none' && style.visibility !== 'hidden';
+        })"""
+    )
+    if not mathml_ok or not katex_html_ok:
+        raise RuntimeError(f"{url}: KaTeX MathML/HTML visibility is incorrect")
+
+    images = page.locator(".content img")
+    images.evaluate_all(
+        """imgs => imgs.forEach(img => {
+          img.loading = 'eager'; img.scrollIntoView({block: 'center'});
+        })"""
+    )
+    page.wait_for_function(
+        "() => [...document.querySelectorAll('.content img')].every(img => img.complete)",
+        timeout=timeout_ms,
+    )
+    broken_images = images.evaluate_all(
+        "imgs => imgs.filter(img => !img.naturalWidth || !img.alt.trim()).map(img => img.src)"
+    )
+    if broken_images:
+        raise RuntimeError(f"{url}: broken or missing-alt content images: {broken_images}")
+
+    missing_toc_targets = page.locator("#TableOfContents a[href^='#']").evaluate_all(
+        """links => links.filter(link => !document.getElementById(
+          decodeURIComponent(link.getAttribute('href').slice(1))
+        )).map(link => link.getAttribute('href'))"""
+    )
+    if missing_toc_targets:
+        raise RuntimeError(f"{url}: TOC target(s) missing: {missing_toc_targets}")
+    if not page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"):
+        raise RuntimeError(f"{url}: page has horizontal overflow")
 
 
 class _QuietStaticHandler(http.server.SimpleHTTPRequestHandler):
@@ -159,6 +234,13 @@ class _QuietStaticHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format: str, *args: object) -> None:
         return
+
+    def end_headers(self) -> None:
+        # Published-origin routes are fulfilled by this local server during
+        # browser validation.  SRI stylesheet requests use crossorigin, so
+        # mirror the CDN's permissive CORS response locally.
+        self.send_header("Access-Control-Allow-Origin", "*")
+        super().end_headers()
 
 
 class _StaticServer(http.server.ThreadingHTTPServer):
