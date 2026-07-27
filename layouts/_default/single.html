@@ -1,88 +1,89 @@
 {{ define "main" }}
-  <section class="section pt-7">
-    <div class="container">
-      <div class="row gx-5">
-        <div class="lg:col-3 mb-10 lg:mb-0">
-          <h5 class="mb-4">目录</h5>
-          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
-        </div>
-        <div class="lg:col-9">
-          <article>
-            {{ $image:= .Params.image }}
-            {{ if $image }}
-              <div class="mb-10">
-                {{ partial "image" (dict "Src" $image "Context" .Page "Alt" .Title "Class" "w-full rounded") }}
-              </div>
-            {{ end }}
-            <div class="article-hero mb-8">
-            <h1 class="h2 mb-3">
-              {{ .Title }}
-            </h1>
-            <ul class="mb-0">
-              {{ with .Params.author }}
-                <li class="mr-4 inline-block">
-                  <a href="{{ "about/" | relURL }}">
-                    <i class="fa-regular fa-circle-user mr-2"></i>{{ . }}
-                  </a>
-                </li>
+  {{ $hasToc := and .TableOfContents (gt (len (findRE "<li>" .TableOfContents)) 0) }}
+  <article class="article-page">
+    <div class="article-reading-layout">
+      <header class="article-header">
+        <h1 class="article-title">{{ .Title }}</h1>
+        <div class="article-meta">
+          {{ with .Params.author }}
+            <span class="article-meta-item">
+              <a href="{{ "about/" | relURL }}">{{ . }}</a>
+            </span>
+          {{ end }}
+          {{ $categories:= .Params.categories }}
+          {{ if $categories }}
+            <span class="article-meta-sep">/</span>
+            <span class="article-meta-item">
+              {{ range $i,$p:= $categories }}
+                <a href="{{ `categories/` | relLangURL }}{{ . | urlize | lower }}/">
+                  {{ . | humanize }}{{ if ne $i (sub (len $categories) 1) }},{{ end }}
+                </a>
               {{ end }}
-              {{ $categories:= .Params.categories }}
-              {{ if $categories }}
-                <li class="mr-4 inline-block">
-                  <i class="fa-regular fa-folder mr-2"></i>
-                  {{ range $i,$p:= $categories }}
-                    <a href="{{ `categories/` | relLangURL }}{{ . | urlize | lower }}/">
-                      {{ . | humanize }}{{ if ne $i (sub (len $categories) 1) }},{{ end }}
-                    </a>
-                  {{ end }}
-                </li>
-              {{ end }}
-              {{ with .PublishDate }}
-                <li class="mr-4 inline-block">
-                  <i class="fa-regular fa-clock mr-2"></i>
-                  {{ time.Format ":date_long" . }}
-                </li>
-              {{ end }}
-            </ul>
-            </div>
-            <div class="content mb-10">
-              {{ partial "toc.html" (dict "Class" "blog" "Collapsed" false "TableOfContents" .TableOfContents) }}
-              {{ .Content }}
-            </div>
-            {{ $tags:= .Params.tags }}
-            {{ if $tags }}
-              <div class="mb-10 flex items-center flex-wrap">
-                <h5 class="mr-3">{{ T "tags" | default "Tags" }} :</h5>
-                <ul>
-                  {{ range $i,$p:= $tags }}
-                    <li class="inline-block">
-                      <a class="bg-light hover:bg-primary dark:bg-darkmode-light dark:hover:bg-darkmode-primary dark:hover:text-text-dark m-1 block rounded px-3 py-1 hover:text-white"
-                         href="{{ `tags/` | relLangURL }}{{ . | urlize | lower }}/">
-                        {{ . | humanize }}
-                      </a>
-                    </li>
-                  {{ end }}
-                </ul>
-              </div>
-            {{ end }}
-            {{ partial "giscus" . }}
-          </article>
-          {{ $related := .Site.RegularPages.Related . | first 10 }}
-          {{ $related = $related | shuffle | first 3 }}
-          {{ with $related }}
-            <div class="section pb-0">
-              <h2 class="h3 mb-12">{{ T "related_posts" | default "Related Posts" }}</h2>
-              <div class="row">
-                {{ range . }}
-                  <div class="lg:col-4 md:col-6 mb-14">
-                    {{ partial "components/blog-card" . }}
-                  </div>
-                {{ end }}
-              </div>
-            </div>
+            </span>
+          {{ end }}
+          {{ with .PublishDate }}
+            <span class="article-meta-sep">/</span>
+            <span class="article-meta-item">
+              {{ time.Format ":date_long" . }}
+            </span>
           {{ end }}
         </div>
+      </header>
+
+      <div class="article-divider"></div>
+
+      <div class="article-content">
+        {{ .Content }}
+      </div>
+
+      {{ $tags:= .Params.tags }}
+      {{ if $tags }}
+        <div class="article-tags">
+          <h5 class="article-tags-title">{{ T "tags" | default "Tags" }}:</h5>
+          <ul>
+            {{ range $i,$p:= $tags }}
+              <li class="inline-block">
+                <a href="{{ `tags/` | relLangURL }}{{ . | urlize | lower }}/">
+                  {{ . | humanize }}
+                </a>
+              </li>
+            {{ end }}
+          </ul>
+        </div>
+      {{ end }}
+
+      {{ partial "giscus" . }}
+    </div>
+
+    <aside class="article-toc" id="article-toc-container">
+      <div class="article-toc-header">目录</div>
+      <nav class="article-toc-nav" id="article-toc-nav"></nav>
+    </aside>
+
+    <button class="article-toc-trigger" id="article-toc-trigger" aria-label="目录"></button>
+
+    <aside class="article-toc-drawer" id="article-toc-drawer" aria-hidden="true">
+      <div class="article-toc-drawer-header">
+        <span>目录</span>
+        <button class="article-toc-drawer-close" id="article-toc-drawer-close" aria-label="关闭">&times;</button>
+      </div>
+      <nav class="article-toc-drawer-nav" id="article-toc-drawer-nav"></nav>
+    </aside>
+    <div class="article-toc-overlay" id="article-toc-overlay" aria-hidden="true"></div>
+  </article>
+
+  {{ $related := .Site.RegularPages.Related . | first 10 }}
+  {{ $related = $related | shuffle | first 3 }}
+  {{ with $related }}
+    <div class="section pb-0">
+      <h2 class="h3 mb-12" style="text-align:center">{{ T "related_posts" | default "Related Posts" }}</h2>
+      <div class="row justify-center">
+        {{ range . }}
+          <div class="lg:col-4 md:col-6 mb-14">
+            {{ partial "components/blog-card" . }}
+          </div>
+        {{ end }}
       </div>
     </div>
-  </section>
+  {{ end }}
 {{ end }}

@@ -1,0 +1,5 @@
+<div class="code-block code-block--{{ .Type }}" data-language="{{ .Type }}">
+{{- $opts := dict "linenos" "false" -}}
+{{- $result := transform.Highlight .Inner .Type $opts -}}
+{{- $result -}}
+</div>
