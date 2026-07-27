@@ -25,6 +25,7 @@ from modules.structured_content import (
 )
 
 PROCESSING_VERSION = "section-actions-v6"
+DEEPSEEK_CACHE_VERSION = "deepseek-v1"
 
 
 def scan_md_files(root_dir: str) -> List[str]:
@@ -66,6 +67,30 @@ def compute_processing_hash(file_path: str) -> str:
         while chunk := source_file.read(8192):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def compute_deepseek_cache_key(content_to_send: str, config: dict) -> str:
+    """Hash the protected API input and DeepSeek settings that affect output."""
+    deepseek_cfg = config.get("processing", {}).get("deepseek_api", {})
+    relevant_cfg = {
+        "version": DEEPSEEK_CACHE_VERSION,
+        "model": deepseek_cfg.get("model", "deepseek-v4-flash"),
+        "temperature": deepseek_cfg.get("temperature", 0.3),
+        "reasoning_effort": deepseek_cfg.get("reasoning_effort", "medium"),
+        "thinking": deepseek_cfg.get("thinking", {"type": "enabled"}),
+        "prompt_template": deepseek_cfg.get(
+            "prompt_template",
+            "请处理以下内容：\n\n{content}",
+        ),
+        "system_prompt": deepseek_cfg.get(
+            "system_prompt",
+            "你是一个专业的博客编辑器。"
+            "不要修改任何图片链接语法，保持 ![alt](url) 和 ![[filename]] 格式原样。",
+        ),
+        "content": content_to_send,
+    }
+    payload = json.dumps(relevant_cfg, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def load_hash_cache(cache_path: str) -> Dict[str, str]:
@@ -136,6 +161,44 @@ def load_mtime_cache(cache_path: str) -> Dict[str, str]:
         return result
     except (json.JSONDecodeError, OSError):
         return {}
+
+
+def load_deepseek_cache(cache_path: str) -> Dict[str, Dict[str, str]]:
+    """Load cached DeepSeek responses keyed by relative source path."""
+    if not os.path.isfile(cache_path):
+        print(f"DeepSeek cache file not found, starting fresh: {cache_path}")
+        return {}
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            raw: Dict[str, Any] = json.load(f)
+        cache: Dict[str, Dict[str, str]] = {}
+        for path, value in raw.items():
+            if not isinstance(value, dict):
+                continue
+            key = value.get("key")
+            response = value.get("response")
+            if isinstance(key, str) and isinstance(response, str):
+                cache[path] = {"key": key, "response": response}
+        print(f"Loaded DeepSeek cache with {len(cache)} entries from {cache_path}")
+        return cache
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"Warning: failed to load DeepSeek cache ({e}), starting fresh")
+        return {}
+
+
+def save_deepseek_cache(
+    cache_path: str, cache: Dict[str, Dict[str, str]]
+) -> None:
+    """Persist cached DeepSeek responses."""
+    payload = {
+        path: value
+        for path, value in sorted(cache.items())
+        if isinstance(value.get("key"), str)
+        and isinstance(value.get("response"), str)
+    }
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"Saved DeepSeek cache with {len(payload)} entries to {cache_path}")
 
 
 def get_local_file_time(
@@ -288,6 +351,7 @@ def process_single_note(
     source_root: str,
     config: dict,
     deepseek_client_func: Callable[[str, dict], str],
+    deepseek_cache: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> bool:
     """Read a source note, process images, call DeepSeek, and write to Hugo
     content directory.
@@ -372,13 +436,23 @@ def process_single_note(
     content_to_send = protector.protect()
     if protector.items:
         print(f"  [content] protected {len(protector.items)} structured span(s)")
+    deepseek_cache_key = compute_deepseek_cache_key(content_to_send, config)
+    cached_response = None
+    if deepseek_cache is not None:
+        cache_entry = deepseek_cache.get(rel_path)
+        if cache_entry and cache_entry.get("key") == deepseek_cache_key:
+            cached_response = cache_entry.get("response", "")
+            print("  DeepSeek cache hit")
 
     # 3. Call DeepSeek and treat a structurally corrupt successful response as
     # retryable. API-level retries alone cannot recover deleted placeholders.
     max_structure_attempts = int(config.get("error", {}).get("max_retries", 3))
     processed = ""
     for attempt in range(max_structure_attempts):
-        response = deepseek_client_func(content_to_send, config)
+        if cached_response is not None:
+            response = cached_response
+        else:
+            response = deepseek_client_func(content_to_send, config)
         if not response:
             print(
                 f"  WARNING: DeepSeek API returned empty result for {rel_path}, "
@@ -387,8 +461,24 @@ def process_single_note(
             response = content_to_send
         try:
             processed = protector.restore(response)
+            if (
+                deepseek_cache is not None
+                and cached_response is None
+                and response != content_to_send
+            ):
+                deepseek_cache[rel_path] = {
+                    "key": deepseek_cache_key,
+                    "response": response,
+                }
             break
         except ValueError as exc:
+            if cached_response is not None:
+                print("  [content] cached DeepSeek response invalid; refreshing")
+                deepseek_cache.pop(rel_path, None)
+                cached_response = None
+                if attempt == max_structure_attempts - 1:
+                    raise
+                continue
             if attempt == max_structure_attempts - 1:
                 raise
             wait_seconds = 2 ** attempt
@@ -397,6 +487,8 @@ def process_single_note(
                 f"({exc}); retrying in {wait_seconds}s ..."
             )
             time.sleep(wait_seconds)
+    if not processed:
+        raise ValueError(f"DeepSeek processing produced empty content for {rel_path}")
 
     # 4. Normalize restored structures and validate math integrity.
     processed = normalize_math_delimiters(processed)
@@ -555,6 +647,10 @@ def process_all_notes(
 
     processing_cfg = config.get("processing", {})
     force = processing_cfg.get("force_reprocess_all", False)
+    deepseek_cache_path = processing_cfg.get(
+        "deepseek_cache_file", ".deepseek_cache.json"
+    )
+    deepseek_cache = load_deepseek_cache(deepseek_cache_path)
 
     if force:
         print("force_reprocess_all = true: deleting cache and reprocessing all files")
@@ -577,7 +673,12 @@ def process_all_notes(
         source_path = os.path.join(source_root, rel_path)
         try:
             process_single_note(
-                source_path, rel_path, source_root, config, deepseek_client_func
+                source_path,
+                rel_path,
+                source_root,
+                config,
+                deepseek_client_func,
+                deepseek_cache,
             )
         except Exception:
             print(f"ERROR: Failed to process {rel_path}, aborting.")
@@ -638,6 +739,13 @@ def process_all_notes(
         if mtime:
             mtimes[rel_path] = mtime
     save_hash_cache(hash_cache_path, new_cache, mtimes)
+    current_rel_paths = set(new_cache.keys())
+    pruned_deepseek_cache = {
+        path: value
+        for path, value in deepseek_cache.items()
+        if path in current_rel_paths
+    }
+    save_deepseek_cache(deepseek_cache_path, pruned_deepseek_cache)
 
     # Copy personal images from vault (avatar, body illustration)
     copy_personal_images(config)
