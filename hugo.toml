@@ -98,11 +98,6 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "css/apple-overrides.css"
 
-# KaTeX CSS for build-time transform.ToMath output (HTML + MathML).
-[[params.plugins.css]]
-  link = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-  attributes = 'integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rl+OelTgXHG+M0E5R2T7LG0" crossorigin="anonymous"'
-
 # JS Plugins
 [[params.plugins.js]]
   link = "js/search.js"

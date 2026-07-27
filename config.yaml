@@ -90,3 +90,5 @@ validation:
   port: 1314
   published_origin: https://bluhuang.github.io
   public_dir: public
+  browser_test_paths:
+  - /ai/0-paper/cv/4-mobilenetv2---inverted-residuals-and-linear-bottlenecks/

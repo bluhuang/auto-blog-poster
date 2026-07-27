@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -22,6 +23,29 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build and publish the blog")
+    parser.add_argument(
+        "--skip-deepseek",
+        "--deepseek-cache-only",
+        dest="deepseek_cache_only",
+        action="store_true",
+        help="Use only an existing DeepSeek response cache; never call the API.",
+    )
+    parser.add_argument(
+        "--no-deploy",
+        action="store_true",
+        help="Process, build, and validate locally without deploying or updating remote cache.",
+    )
+    parser.add_argument(
+        "--only-path",
+        action="append",
+        default=[],
+        help="Process only a source-note path (repeatable; useful for local validation).",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
     print("=" * 60)
     print("  Auto Blog Poster")
@@ -30,7 +54,13 @@ def main() -> None:
     # Load environment variables
     load_dotenv(override=False)
 
+    args = _parse_args()
     config = load_config()
+    if args.deepseek_cache_only:
+        config["_deepseek_cache_only"] = True
+        print("DeepSeek mode: cache-only (API calls forbidden)")
+    if args.only_path:
+        config["_only_paths"] = args.only_path
     source_cfg = config.get("source", {})
     output_cfg = config.get("output", {})
     print(f"Source repo: {source_cfg.get('owner')}/{source_cfg.get('repo')}")
@@ -74,12 +104,24 @@ def main() -> None:
     print()
     print("[3/7] Processing notes (incremental) ...")
     try:
+        deepseek_calls = 0
+
+        def counted_deepseek_call(content: str, call_config: dict) -> str:
+            nonlocal deepseek_calls
+            deepseek_calls += 1
+            if call_config.get("_deepseek_cache_only", False):
+                raise AssertionError("DeepSeek API call attempted in cache-only mode")
+            return deepseek_client.call_deepseek(content, call_config)
+
         content_processor.process_all_notes(
             source_root=str(notes_root),
             config=config,
-            deepseek_client_func=deepseek_client.call_deepseek,
+            deepseek_client_func=counted_deepseek_call,
             hash_cache_path=cache_file,
         )
+        print(f"DeepSeek API calls: {deepseek_calls}")
+        if args.deepseek_cache_only and deepseek_calls != 0:
+            raise AssertionError("DeepSeek API calls must be 0 in cache-only mode")
     except Exception as e:
         print(f"FATAL: Content processing failed: {e}")
         sys.exit(1)
@@ -111,22 +153,30 @@ def main() -> None:
         sys.exit(1)
 
     # ── Step 6: Deploy to GitHub Pages ─────────────────────────────
-    print()
-    print("[6/7] Deploying to GitHub Pages ...")
-    try:
-        deployer.deploy(config)
-    except Exception as e:
-        print(f"FATAL: Deployment failed: {e}")
-        sys.exit(1)
+    if args.no_deploy:
+        print()
+        print("[6/7] Deployment skipped (--no-deploy)")
+    else:
+        print()
+        print("[6/7] Deploying to GitHub Pages ...")
+        try:
+            deployer.deploy(config)
+        except Exception as e:
+            print(f"FATAL: Deployment failed: {e}")
+            sys.exit(1)
 
     # ── Step 7: Persist cache for next run ─────────────────────────
-    print()
-    print("[7/7] Saving processed cache ...")
-    try:
-        cache_persister.push_cache(config)
-    except Exception as e:
-        print(f"FATAL: Failed to save cache: {e}")
-        sys.exit(1)
+    if args.no_deploy:
+        print()
+        print("[7/7] Remote cache update skipped (--no-deploy)")
+    else:
+        print()
+        print("[7/7] Saving processed cache ...")
+        try:
+            cache_persister.push_cache(config)
+        except Exception as e:
+            print(f"FATAL: Failed to save cache: {e}")
+            sys.exit(1)
 
     print()
     print("=" * 60)

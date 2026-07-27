@@ -1,4 +1,5 @@
 import hashlib
+import difflib
 import json
 import os
 import re
@@ -19,9 +20,11 @@ from modules.git_ops import (
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
 from modules.section_processor import process_configured_sections
 from modules.structured_content import (
+    PLACEHOLDER_RE,
     StructuredContentProtector,
     normalize_math_delimiters,
     validate_math_delimiters,
+    validate_math_lint,
 )
 
 PROCESSING_VERSION = "section-actions-v6"
@@ -260,6 +263,120 @@ def _extract_first_h1(content: str) -> Optional[str]:
     return None
 
 
+def _plain_heading_text(text: str) -> str:
+    """Make formula-bearing headings readable before Goldmark creates anchors.
+
+    Headings are navigation labels, not mathematical content.  Removing their
+    delimiters avoids raw LaTeX in Hugo's generated TOC while keeping one
+    deterministic heading text for both the anchor and the TOC link.
+    """
+    text = re.sub(r"\\\\\((.*?)\\\\\)|\$(.*?)\$", lambda m: m.group(1) or m.group(2) or "", text)
+    text = text.replace(r"\\times", "×").replace(r"\\cdot", "·")
+    text = re.sub(r"\\(?:text|operatorname)\{([^}]*)\}", r"\1", text)
+    text = re.sub(r"\\[A-Za-z]+", "", text)
+    text = re.sub(r"[{}]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _normalize_headings(content: str, title: str) -> str:
+    """Remove a duplicated first H1 and normalize math from heading labels."""
+    first_h1 = re.search(r"^(#)\s+(.+?)\s*$", content, re.MULTILINE)
+    if first_h1 and _plain_heading_text(first_h1.group(2)) == _plain_heading_text(title):
+        content = content[:first_h1.start()] + content[first_h1.end():]
+        content = content.lstrip("\n")
+
+    def replace_heading(match: re.Match) -> str:
+        return f"{match.group(1)} {_plain_heading_text(match.group(2))}"
+
+    return re.sub(r"^(#{1,6})\s+(.+?)\s*$", replace_heading, content, flags=re.MULTILINE)
+
+
+def _remap_cached_placeholders(response: str, protector: StructuredContentProtector) -> Optional[str]:
+    """Reuse a cache-only response after protected spans change.
+
+    DeepSeek only sees placeholders.  Formula/image/code edits change their
+    digest but not the editorial prose, so cache-only rebuilds can safely map
+    old placeholders to the current positions.  Any missing, duplicated, or
+    reordered placeholder rejects the cache entry instead of risking content.
+    """
+    found = PLACEHOLDER_RE.findall(response)
+    if len(found) != len(protector.items) or len(set(found)) != len(found):
+        return None
+    indexed = []
+    for placeholder in found:
+        match = re.search(r"_(\d{4})@@$", placeholder)
+        if not match:
+            return None
+        indexed.append(int(match.group(1)))
+    if sorted(indexed) != list(range(len(protector.items))):
+        return None
+    remapped = response
+    for old, index in zip(found, indexed):
+        remapped = remapped.replace(old, protector.items[index].placeholder)
+    return remapped
+
+
+def _protected_kind(item: str) -> str:
+    """Return a coarse protected-span type used only for cache alignment."""
+    stripped = item.lstrip()
+    if stripped.startswith(("```", "~~~")):
+        return "fence"
+    if stripped.startswith("![[") or stripped.startswith("!["):
+        return "image"
+    if stripped.startswith(("$$", r"\\[", r"\\(")) or stripped.startswith("$"):
+        return "math"
+    return "html"
+
+
+def _strip_front_matter(content: str) -> str:
+    if content.startswith("---"):
+        end = content.find("---", 3)
+        if end != -1:
+            return content[end + 3:].lstrip("\n")
+    return content
+
+
+def _remap_cached_response_from_output(
+    response: str, current: StructuredContentProtector, content_path: str
+) -> Optional[str]:
+    """Adapt a cached editorial response when source-only structure changed.
+
+    The last generated Markdown preserves the old protected span sequence.
+    Aligning its coarse span types with the current source permits deletions
+    (for example, a removed broken image) without guessing or calling the LLM.
+    New or ambiguous spans deliberately fail cache-only mode.
+    """
+    if not os.path.isfile(content_path):
+        return None
+    old_body = _strip_front_matter(Path(content_path).read_text(encoding="utf-8"))
+    old = StructuredContentProtector(old_body)
+    old.protect()
+    old_tokens = PLACEHOLDER_RE.findall(response)
+    if len(old.items) != len(old_tokens) or len(set(old_tokens)) != len(old_tokens):
+        return None
+    old_kinds = [_protected_kind(item.original) for item in old.items]
+    new_kinds = [_protected_kind(item.original) for item in current.items]
+    matcher = difflib.SequenceMatcher(None, old_kinds, new_kinds, autojunk=False)
+    mapping: Dict[int, int] = {}
+    for tag, old_start, old_end, new_start, new_end in matcher.get_opcodes():
+        if tag == "equal":
+            mapping.update(
+                (old_index, new_index)
+                for old_index, new_index in zip(
+                    range(old_start, old_end), range(new_start, new_end)
+                )
+            )
+        elif tag != "delete":
+            return None
+    if set(mapping.values()) != set(range(len(current.items))):
+        return None
+    remapped = response
+    for old_index, token in enumerate(old_tokens):
+        replacement = current.items[mapping[old_index]].placeholder if old_index in mapping else ""
+        remapped = remapped.replace(token, replacement)
+    return remapped
+
+
 def get_files_to_process(
     root_dir: str, cache_path: str
 ) -> Tuple[List[str], List[str]]:
@@ -424,14 +541,16 @@ def process_single_note(
                         shutil.copy2(source_abs, dest_path)
                         print(f"  [image] copied: {os.path.basename(source_abs)}")
                 except Exception as e:
-                    print(f"  [image] failed ({type(e).__name__}): {os.path.basename(source_abs)} - {e}")
-                    continue
+                    raise RuntimeError(
+                        f"Image copy failed for {source_path}: {source_abs} ({e})"
+                    ) from e
             else:
                 print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
             replacements[original_syntax] = (
                 f"![](/{urllib.parse.quote(target_rel)})"
             )
     validate_math_delimiters(raw_content)
+    validate_math_lint(raw_content)
     protector = StructuredContentProtector(raw_content, replacements)
     content_to_send = protector.protect()
     if protector.items:
@@ -443,6 +562,31 @@ def process_single_note(
         if cache_entry and cache_entry.get("key") == deepseek_cache_key:
             cached_response = cache_entry.get("response", "")
             print("  DeepSeek cache hit")
+        elif cache_entry and config.get("_deepseek_cache_only", False):
+            cached_response = _remap_cached_placeholders(
+                cache_entry.get("response", ""), protector
+            )
+            if cached_response is None:
+                output_path = os.path.join(
+                    config.get("output", {}).get("content_dir", "content"), rel_path
+                )
+                cached_response = _remap_cached_response_from_output(
+                    cache_entry.get("response", ""), protector, output_path
+                )
+            if cached_response is None:
+                raise RuntimeError(
+                    f"DeepSeek cache-only mode: no compatible cached response for {rel_path}; "
+                    "refusing to call the API"
+                )
+            print("  DeepSeek cache-only structural remap hit")
+            deepseek_cache[rel_path] = {
+                "key": deepseek_cache_key,
+                "response": cached_response,
+            }
+    if cached_response is None and config.get("_deepseek_cache_only", False):
+        raise RuntimeError(
+            f"DeepSeek cache-only mode: cache miss for {rel_path}; refusing to call the API"
+        )
 
     # 3. Call DeepSeek and treat a structurally corrupt successful response as
     # retryable. API-level retries alone cannot recover deleted placeholders.
@@ -473,6 +617,11 @@ def process_single_note(
             break
         except ValueError as exc:
             if cached_response is not None:
+                if config.get("_deepseek_cache_only", False):
+                    raise RuntimeError(
+                        f"DeepSeek cache-only mode: cached response for {rel_path} "
+                        f"failed integrity checks: {exc}"
+                    ) from exc
                 print("  [content] cached DeepSeek response invalid; refreshing")
                 deepseek_cache.pop(rel_path, None)
                 cached_response = None
@@ -493,6 +642,7 @@ def process_single_note(
     # 4. Normalize restored structures and validate math integrity.
     processed = normalize_math_delimiters(processed)
     validate_math_delimiters(processed)
+    validate_math_lint(processed)
     print(f"  [content] restored {len(protector.items)} structured span(s)")
 
     # 5. Safeguard against Hugo YAML frontmatter mis-parsing
@@ -508,6 +658,7 @@ def process_single_note(
     if not title:
         title = os.path.splitext(os.path.basename(rel_path))[0]
         title = _strip_title_prefix(title, config)
+    processed = _normalize_headings(processed, title)
     lines = ["---", f"title: \"{title}\""]
 
     # Image: first extracted image URL
@@ -668,6 +819,16 @@ def process_all_notes(
         to_process = sorted(current_files)
     else:
         to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
+
+    only_paths = processing_cfg.get("_only_paths") or config.get("_only_paths", [])
+    if only_paths:
+        available = set(scan_md_files(source_root))
+        missing = sorted(set(only_paths) - available)
+        if missing:
+            raise FileNotFoundError(f"Requested source note(s) not found: {missing}")
+        to_process = sorted(set(only_paths))
+        to_delete = []
+        print(f"Limiting local processing to {len(to_process)} requested note(s)")
 
     for rel_path in to_process:
         source_path = os.path.join(source_root, rel_path)
