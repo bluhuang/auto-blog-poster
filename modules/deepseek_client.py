@@ -41,6 +41,8 @@ def call_deepseek(content: str, config: dict) -> str:
     model = deepseek_cfg.get("model", "deepseek-v4-flash")
     temperature = deepseek_cfg.get("temperature", 0.3)
     max_tokens = deepseek_cfg.get("max_tokens", 4000)
+    reasoning_effort = deepseek_cfg.get("reasoning_effort", "medium")
+    thinking = deepseek_cfg.get("thinking", {"type": "enabled"})
     prompt_template = deepseek_cfg.get(
         "prompt_template",
         "请处理以下内容：\n\n{content}",
@@ -70,6 +72,8 @@ def call_deepseek(content: str, config: dict) -> str:
         ],
         "temperature": temperature,
         "max_tokens": max_tokens,
+        "reasoning_effort": reasoning_effort,
+        "thinking": thinking,
     }
 
     max_retries = 3
