@@ -1,0 +1,32 @@
+{{- $excludedSections := slice "about" "guestbook" "blogs" "categories" "tags" -}}
+{{- $level := .level | default 0 -}}
+{{- $current := .page -}}
+{{- range .node.Sections.ByTitle -}}
+  {{- if and (not (in $excludedSections .Section)) (gt (len .RegularPagesRecursive) 0) -}}
+    {{- $isAncestor := $current.IsDescendant . -}}
+    {{- $isActive := eq . $current -}}
+    {{- $hasChildren := gt (len .Sections) 0 -}}
+    {{- $isExpanded := and $hasChildren (or $isAncestor $isActive) -}}
+    <div class="library-tree-node{{ if $isExpanded }} is-expanded{{ end }}{{ if $isActive }} is-current{{ end }}" data-library-tree-node="{{ .RelPermalink }}">
+      <div class="library-tree-row" style="--tree-level: {{ $level }}">
+        {{ if $hasChildren }}
+          <button class="library-tree-toggle" type="button" data-library-tree-toggle aria-expanded="{{ if $isExpanded }}true{{ else }}false{{ end }}" aria-label="{{ if $isExpanded }}收起{{ else }}展开{{ end }} {{ .Title }}">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        {{ else }}
+          <span class="library-tree-toggle library-tree-toggle-placeholder" aria-hidden="true"></span>
+        {{ end }}
+        <a class="library-tree-link{{ if $isActive }} is-current{{ end }}" href="{{ .RelPermalink }}"{{ if $isActive }} aria-current="page"{{ end }}>
+          <svg class="library-folder-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.75 7.75A2.75 2.75 0 0 1 6.5 5h3.1l1.8 2h6.1a2.75 2.75 0 0 1 2.75 2.75v6.75a2.75 2.75 0 0 1-2.75 2.75h-11A2.75 2.75 0 0 1 3.75 16.5V7.75Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="library-tree-name">{{ .Title }}</span>
+          <span class="library-count">{{ len .RegularPagesRecursive }}</span>
+        </a>
+      </div>
+      {{ if $hasChildren }}
+        <div class="library-tree-children">
+          {{ partial "library-folder-tree" (dict "page" $current "node" . "level" (add $level 1)) }}
+        </div>
+      {{ end }}
+    </div>
+  {{- end -}}
+{{- end -}}
