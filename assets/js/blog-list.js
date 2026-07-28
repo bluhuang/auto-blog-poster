@@ -50,7 +50,8 @@
       trigger.setAttribute("aria-pressed", String(active));
     });
     defaultLinks.forEach(function (link) {
-      if (next === "recent") link.classList.remove("is-active");
+      var isCurrentRoot = link.hasAttribute("aria-current");
+      link.classList.toggle("is-active", next === "default" && isCurrentRoot);
     });
 
     if (options.updateURL) updateURL(next, Boolean(options.replace));
