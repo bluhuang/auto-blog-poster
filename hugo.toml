@@ -98,6 +98,10 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "css/apple-overrides.css"
 
+# Blog list page redesign — Apple Design Skill
+[[params.plugins.css]]
+  link = "css/blog-list-redesign.css"
+
 # Article reading page styles (loaded last for highest specificity)
 [[params.plugins.css]]
   link = "css/article-reading.css"
@@ -129,6 +133,9 @@ defaultContentLanguageInSubdir = false
   lazy = true
 [[params.plugins.js]]
   link = "plugins/youtube-lite.js"
+  lazy = true
+[[params.plugins.js]]
+  link = "js/blog-list.js"
   lazy = true
 [[params.plugins.js]]
   link = "js/article-reading.js"
