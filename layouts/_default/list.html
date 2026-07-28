@@ -1,24 +1,16 @@
 {{ define "main" }}
-  {{ partial "page-header" . }}
-
-  <section class="section">
-    <div class="container">
-      <div class="row gx-5">
-        <div class="lg:col-3 mb-10 lg:mb-0">
-          <h5 class="mb-4">目录</h5>
-          {{ partial "tree-nav" (dict "page" . "node" .Site.Home) }}
-        </div>
-        <div class="lg:col-9">
-          <div class="grid md:grid-cols-2 gap-6">
-            {{ range .RegularPagesRecursive.ByDate.Reverse }}
-              {{ partial "components/blog-card" . }}
-            {{ end }}
-          </div>
+  {{ if eq .Kind "section" }}
+    {{ partial "library-page" . }}
+  {{ else }}
+    {{ partial "page-header" . }}
+    <section class="section">
+      <div class="container">
+        <div class="grid md:grid-cols-2 gap-6">
+          {{ range .RegularPagesRecursive.ByDate.Reverse }}
+            {{ partial "components/blog-card" . }}
+          {{ end }}
         </div>
       </div>
-    </div>
-  </section>
-  <div class="container">
-    {{ partial "giscus" . }}
-  </div>
+    </section>
+  {{ end }}
 {{ end }}
