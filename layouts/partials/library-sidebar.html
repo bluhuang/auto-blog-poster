@@ -1,0 +1,22 @@
+{{- $current := . -}}
+{{- $isLibraryRoot := eq .Section "blogs" -}}
+<div class="library-sidebar-content">
+  <section class="library-nav-card" aria-labelledby="library-browse-heading">
+    <p class="library-card-label" id="library-browse-heading">浏览</p>
+    <a class="library-browse-item{{ if $isLibraryRoot }} is-active{{ end }}" href="{{ "blogs/" | relLangURL }}" data-library-default-link{{ if $isLibraryRoot }} aria-current="page"{{ end }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>全部笔记</span>
+    </a>
+    <button class="library-browse-item" type="button" data-library-view-trigger="recent" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>最近更新</span>
+    </button>
+  </section>
+
+  <section class="library-nav-card library-folder-card" aria-labelledby="library-folders-heading">
+    <p class="library-card-label" id="library-folders-heading">文件夹</p>
+    <nav class="library-folder-tree" aria-label="博客文件夹">
+      {{ partial "library-folder-tree" (dict "page" $current "node" site.Home "level" 0) }}
+    </nav>
+  </section>
+</div>
