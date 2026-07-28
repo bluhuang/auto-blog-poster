@@ -1,0 +1,34 @@
+{{- $pages := .pages -}}
+{{- $title := .title | default "文章" -}}
+{{- $label := .label | default (printf "%d 篇" (len $pages)) -}}
+<section class="library-content-section">
+  <div class="library-section-heading">
+    <h2>{{ $title }}</h2>
+    {{ if $label }}<span>{{ $label }}</span>{{ end }}
+  </div>
+  {{ if gt (len $pages) 0 }}
+    <div class="library-article-collection">
+      {{ range $pages }}
+        <article class="library-article-row">
+          <a class="library-article-link" href="{{ .RelPermalink }}">
+            <div class="library-article-main">
+              <div class="library-article-meta">
+                <span class="library-article-path">{{ .CurrentSection.Title }}</span>
+                {{ with .Date }}<span class="library-meta-dot"></span><time datetime="{{ .Format "2006-01-02" }}">{{ .Format "2006-01-02" }}</time>{{ end }}
+              </div>
+              <h3 class="library-article-title">{{ .Title }}</h3>
+              {{ with .Summary }}<p class="library-article-summary">{{ . | plainify }}</p>{{ end }}
+            </div>
+            <span class="library-row-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </a>
+        </article>
+      {{ end }}
+    </div>
+  {{ else }}
+    <div class="library-empty-state">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.75 7.75A2.75 2.75 0 0 1 6.5 5h3.1l1.8 2h6.1a2.75 2.75 0 0 1 2.75 2.75v6.75a2.75 2.75 0 0 1-2.75 2.75h-11A2.75 2.75 0 0 1 3.75 16.5V7.75Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      <strong>这个文件夹暂时没有文章</strong>
+      <p>可以继续进入下级文件夹浏览。</p>
+    </div>
+  {{ end }}
+</section>
