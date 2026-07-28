@@ -3,11 +3,8 @@
 {{ $recent := where site.RegularPages "Section" "not in" $excludedSections }}
 {{ $recent = $recent.ByLastmod.Reverse }}
 <div class="home-redesign-page" data-home-redesign>
-  <div class="home-background-orb home-background-orb-one" aria-hidden="true"></div>
-  <div class="home-background-orb home-background-orb-two" aria-hidden="true"></div>
-
   <div class="home-container">
-    <section class="home-hero home-glass-card" aria-labelledby="home-hero-title" data-home-reveal>
+    <section class="home-hero" id="home-top" aria-labelledby="home-hero-title">
       <div class="home-hero-copy">
         <p class="home-eyebrow"><span class="home-status-dot" aria-hidden="true"></span>持续更新中的个人知识库</p>
         <h1 id="home-hero-title">Bluhuang's<br>everything notebook.</h1>
@@ -24,18 +21,20 @@
           <span>Agent</span>
         </div>
       </div>
-      <figure class="home-portrait">
-        <img src="{{ site.Params.personal.avatar | default "images/avatar.jpg" | relURL }}" alt="BluHuang 的主页照片">
-        <figcaption><strong>BluHuang</strong><span>Everything is work in progress.</span></figcaption>
-      </figure>
+      <div class="home-hero-media">
+        <figure class="home-portrait">
+          <img src="{{ site.Params.personal.avatar | default "images/avatar.jpg" | relURL }}" alt="BluHuang 的主页照片">
+          <figcaption><strong>BluHuang</strong><span>Everything is work in progress.</span></figcaption>
+        </figure>
+      </div>
     </section>
 
-    <section class="home-section" aria-labelledby="home-recent-title" data-home-reveal>
+    <section class="home-section" aria-labelledby="home-recent-title">
       <header class="home-section-header">
         <div>
           <p class="home-section-kicker">最近更新</p>
           <h2 id="home-recent-title">正在学习和构建的内容</h2>
-          <p>首页只展示最值得继续阅读的入口，完整时间线保留在博客知识库中。</p>
+          <p>首页只展示最值得继续阅读的入口，完整时间线放在博客知识库中。</p>
         </div>
         <a class="home-text-link" href="{{ "blogs/?view=recent" | relLangURL }}">查看全部更新{{ partial "home-arrow-icon" }}</a>
       </header>
@@ -43,7 +42,7 @@
       <div class="home-recent-layout">
         {{ range first 1 $recent }}
           {{ $updated := .Lastmod | default .Date }}
-          <a class="home-feature-article home-interactive-card" href="{{ .RelPermalink }}">
+          <a class="home-feature-article" href="{{ .RelPermalink }}">
             <div>
               <span class="home-article-label">最新笔记 · {{ .CurrentSection.Title }}</span>
               <h3>{{ .Title }}</h3>
@@ -71,113 +70,103 @@
       </div>
     </section>
 
-    <section class="home-section" aria-labelledby="home-topics-title" data-home-reveal>
+    <section class="home-section" aria-labelledby="home-topics-title">
       <header class="home-section-header">
         <div>
           <p class="home-section-kicker">知识地图</p>
           <h2 id="home-topics-title">从正在深入的方向开始</h2>
-          <p>不把完整目录树搬到首页，只保留几个高价值入口。</p>
+          <p>不把完整目录树搬到首页，只保留四个高价值入口。</p>
         </div>
         <a class="home-text-link" href="{{ "blogs/" | relLangURL }}">打开文件夹浏览器{{ partial "home-arrow-icon" }}</a>
       </header>
 
       <div class="home-topic-grid">
         {{ with site.GetPage "AI" }}
-          <a class="home-topic-card home-interactive-card" href="{{ .RelPermalink }}">
-            <span class="home-topic-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6v6H9zM12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <a class="home-topic-card" href="{{ .RelPermalink }}">
+            <span class="home-topic-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6v6H9zM12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
             <h3>AI 与图像处理</h3><p>模型训练、ISP、图像去噪、论文阅读与大模型实践。</p><span class="home-topic-meta">{{ len .RegularPagesRecursive }} 篇笔记</span>
           </a>
         {{ end }}
         {{ with site.GetPage "coding" }}
-          <a class="home-topic-card home-interactive-card" href="{{ .RelPermalink }}">
-            <span class="home-topic-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M14 4l-4 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <a class="home-topic-card" href="{{ .RelPermalink }}">
+            <span class="home-topic-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M14 4l-4 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <h3>编程与算法</h3><p>算法题型、数据结构、工程实现和可复用的解题方法。</p><span class="home-topic-meta">{{ len .RegularPagesRecursive }} 篇笔记</span>
           </a>
         {{ end }}
         {{ with site.GetPage "database" }}
-          <a class="home-topic-card home-interactive-card" href="{{ .RelPermalink }}">
-            <span class="home-topic-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7.5" ry="3" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 6v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6M4.5 12v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" stroke="currentColor" stroke-width="1.6"/></svg></span>
+          <a class="home-topic-card" href="{{ .RelPermalink }}">
+            <span class="home-topic-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7.5" ry="3" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 6v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6M4.5 12v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" stroke="currentColor" stroke-width="1.6"/></svg></span>
             <h3>数据库</h3><p>索引、性能优化、向量检索与数据库工程实践。</p><span class="home-topic-meta">{{ len .RegularPagesRecursive }} 篇笔记</span>
           </a>
         {{ end }}
         {{ with site.GetPage "z_mixed" }}
-          <a class="home-topic-card home-interactive-card" href="{{ .RelPermalink }}">
-            <span class="home-topic-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.75 7.75A2.75 2.75 0 0 1 6.5 5h3.1l1.8 2h6.1a2.75 2.75 0 0 1 2.75 2.75v6.75a2.75 2.75 0 0 1-2.75 2.75h-11A2.75 2.75 0 0 1 3.75 16.5V7.75Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+          <a class="home-topic-card" href="{{ .RelPermalink }}">
+            <span class="home-topic-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M3.75 7.75A2.75 2.75 0 0 1 6.5 5h3.1l1.8 2h6.1a2.75 2.75 0 0 1 2.75 2.75v6.75a2.75 2.75 0 0 1-2.75 2.75h-11A2.75 2.75 0 0 1 3.75 16.5V7.75Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
             <h3>工具与工作流</h3><p>远程开发、效率工具、自动化流程和真实踩坑记录。</p><span class="home-topic-meta">{{ len .RegularPagesRecursive }} 篇笔记</span>
           </a>
         {{ end }}
       </div>
     </section>
 
-    <section class="home-section" aria-labelledby="home-automation-title" data-home-reveal>
-      <header class="home-section-header home-automation-heading">
+    <section class="home-section" aria-labelledby="home-story-title">
+      <header class="home-section-header">
         <div>
           <p class="home-section-kicker">这个站如何运转</p>
-          <h2 id="home-automation-title">把 Obsidian 变成持续交付的知识系统</h2>
-          <p>auto-blog-poster 不只是一个发布脚本，而是一条面向长期维护的内容流水线。</p>
+          <h2 id="home-story-title">从 Obsidian 到网站，自动完成</h2>
+          <p>保留原首页的自动化彩蛋，但把它从长篇说明改成一眼能看懂的流程。</p>
         </div>
       </header>
 
-      <article class="home-automation-card home-glass-card">
-        <div class="home-automation-intro">
-          <div>
-            <span class="home-project-badge">OPEN SOURCE · AUTOMATED PIPELINE</span>
-            <h3>auto-blog-poster</h3>
-            <p>我只需要在 Obsidian 中写笔记并推送。系统会识别真实变化、调用 DeepSeek 处理内容、转换 Obsidian 语法与资源、构建 Hugo，并自动发布到 GitHub Pages。</p>
+      <div class="home-story-grid">
+        <article class="home-automation-card">
+          <h3>auto-blog-poster</h3>
+          <p>我只在 Obsidian 里写笔记。仓库更新后，系统识别变化、调用 DeepSeek 处理内容、转换语法和图片、生成 Hugo 站点，再部署到 GitHub Pages。</p>
+          <div class="home-flow" aria-label="自动发布流程">
+            <div class="home-flow-step"><b>01</b><span>Obsidian<br>记录笔记</span></div>
+            <div class="home-flow-step"><b>02</b><span>增量识别<br>内容变化</span></div>
+            <div class="home-flow-step"><b>03</b><span>AI 润色<br>处理资源</span></div>
+            <div class="home-flow-step"><b>04</b><span>GitHub Pages<br>自动部署</span></div>
           </div>
-          <a class="home-project-name" href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener">bluhuang/auto-blog-poster</a>
-        </div>
+        </article>
 
-        <div class="home-flow" aria-label="自动发布流程">
-          <div class="home-flow-step"><b>01</b><span>Obsidian<br>记录与推送</span></div>
-          <div class="home-flow-connector" aria-hidden="true"></div>
-          <div class="home-flow-step"><b>02</b><span>增量识别<br>真正变化</span></div>
-          <div class="home-flow-connector" aria-hidden="true"></div>
-          <div class="home-flow-step"><b>03</b><span>AI 润色<br>语法与资源处理</span></div>
-          <div class="home-flow-connector" aria-hidden="true"></div>
-          <div class="home-flow-step"><b>04</b><span>Hugo 构建<br>Pages 自动部署</span></div>
-        </div>
+        <figure class="home-dog-card">
+          <img src="{{ "images/dog-inline.jpg" | relURL }}" alt="主页原有的汪汪队照片">
+          <figcaption><strong>汪汪队镇园</strong><span>这个花园很安全。</span></figcaption>
+        </figure>
+      </div>
 
-        <div class="home-advanced-header">
+      <article class="home-advanced-layer">
+        <header class="home-advanced-header">
           <div><p>第二层能力</p><h3>真正适合长期运行的高级功能</h3></div>
           <span>不是每次全量重做，而是稳定地持续维护</span>
-        </div>
+        </header>
         <div class="home-advanced-grid">
           <article><span>01</span><h4>跨仓库自动触发</h4><p>私有 Obsidian 仓库推送后，通过事件驱动自动启动完整发布流程。</p></article>
           <article><span>02</span><h4>精准增量处理</h4><p>使用哈希识别新增、修改和删除，只处理真正变化的笔记，避免重复调用模型。</p></article>
           <article><span>03</span><h4>AI 润色与缓存</h4><p>调用 DeepSeek API 优化表达，并通过独立缓存保留已处理结果，兼顾质量与成本。</p></article>
           <article><span>04</span><h4>Obsidian 原生兼容</h4><p>转换 Wiki 链接、图片引用与特殊语法，让本地笔记无需手工改写即可发布。</p></article>
-          <article><span>05</span><h4>资源与状态持久化</h4><p>同步图片和内容缓存，保存文件时间与处理状态，支持后续构建继续复用。</p></article>
+          <article><span>05</span><h4>资源与状态持久化</h4><p>同步图片和处理状态，后续构建可直接复用，避免重复生成。</p></article>
           <article><span>06</span><h4>自动构建与验证</h4><p>通过 Hugo 和 GitHub Actions 完成站点构建、校验与 GitHub Pages 部署。</p></article>
         </div>
-
         <div class="home-project-cta">
           <div><strong>想试试？欢迎 Star and Fork 我的 project!</strong><span>把自己的 Obsidian 笔记也变成持续更新的网站。</span></div>
           <a class="home-button home-button-primary" href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener">查看项目源码{{ partial "home-arrow-icon" }}</a>
         </div>
       </article>
-
-      <figure class="home-dog-card home-interactive-card">
-        <img src="{{ "images/dog-inline.jpg" | relURL }}" alt="主页原有的汪汪队照片">
-        <figcaption><strong>汪汪队镇园</strong><span>这个花园很安全。</span></figcaption>
-      </figure>
     </section>
 
-    <section class="home-section" aria-labelledby="home-friends-title" data-home-reveal>
-      <header class="home-section-header">
-        <div><p class="home-section-kicker">保持联系</p><h2 id="home-friends-title">我需要朋友，真的。</h2><p>聊技术、聊转行，或者聊“为什么这个 embedding 不 work”。</p></div>
-      </header>
-      <div class="home-friend-grid">
-        <a class="home-friend-card home-interactive-card" href="{{ "guestbook/" | relLangURL }}">
-          <span class="home-friend-icon" aria-hidden="true">💬</span><div><h3>留言板</h3><p>留下你的想法、建议，或者只是打个招呼。</p></div><span class="home-row-chevron" aria-hidden="true">›</span>
-        </a>
-        <a class="home-friend-card home-interactive-card" href="https://github.com/bluhuang" target="_blank" rel="noopener">
-          <span class="home-friend-icon home-github-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .8a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2.22c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.72 0-1.26.45-2.3 1.19-3.11-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.17 1.19a10.94 10.94 0 0 1 5.78 0c2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.77.11 3.06.74.81 1.19 1.85 1.19 3.11 0 4.44-2.71 5.42-5.29 5.71.42.36.79 1.07.79 2.16v3.2c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .8Z"/></svg></span><div><h3>GitHub</h3><p>查看项目、代码与正在持续构建的东西。</p></div><span class="home-row-chevron" aria-hidden="true">›</span>
-        </a>
+    <section class="home-contact-card" aria-labelledby="home-contact-title">
+      <div>
+        <h2 id="home-contact-title">我需要朋友，真的。</h2>
+        <p>聊技术、聊转行，或者聊“为什么这个 embedding 不 work”。</p>
+      </div>
+      <div class="home-contact-actions">
+        <a class="home-contact-action home-contact-action-primary" href="{{ "guestbook/" | relLangURL }}"><span aria-hidden="true">💬</span><div><strong>留言板</strong><small>留下想法或打个招呼</small></div></a>
+        <a class="home-contact-action" href="https://github.com/bluhuang" target="_blank" rel="noopener"><span class="home-contact-github" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .8a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2.22c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.72 0-1.26.45-2.3 1.19-3.11-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.17 1.19a10.94 10.94 0 0 1 5.78 0c2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.77.11 3.06.74.81 1.19 1.85 1.19 3.11 0 4.44-2.71 5.42-5.29 5.71.42.36.79 1.07.79 2.16v3.2c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .8Z"/></svg></span><div><strong>GitHub</strong><small>查看项目与代码</small></div></a>
       </div>
     </section>
 
-    <section class="home-guestbook-card home-glass-card" aria-labelledby="home-guestbook-title" data-home-reveal>
+    <section class="home-guestbook-card" aria-labelledby="home-guestbook-title">
       <header><p class="home-section-kicker">直接在这里留言</p><h2 id="home-guestbook-title">欢迎来到我的留言板</h2><p>不需要跳转页面，在首页最下面就可以留下内容。</p></header>
       {{ partial "giscus" . }}
     </section>
