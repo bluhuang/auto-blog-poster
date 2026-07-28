@@ -105,6 +105,8 @@ defaultContentLanguageInSubdir = false
 # Homepage redesign — Apple Design Skill
 [[params.plugins.css]]
   link = "css/home-redesign.css"
+[[params.plugins.css]]
+  link = "css/home-redesign-tuning.css"
 
 # Article reading page styles (loaded last for highest specificity)
 [[params.plugins.css]]
