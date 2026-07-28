@@ -368,14 +368,17 @@ h1, h2, h3, h4, h5, h6 {
 .site-header {
   padding-top: 0.875rem;
   padding-bottom: 0.875rem;
-  background-color: rgba(255, 255, 255, 0.75);
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.82);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid color-mix(in srgb, rgba(0, 0, 0, 0.08) 86%, transparent);
 }
 .dark .site-header {
-  background-color: rgba(28, 28, 30, 0.80);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(18, 18, 20, 0.84);
+  border-bottom-color: color-mix(in srgb, rgba(255, 255, 255, 0.08) 86%, transparent);
 }
 
 /* === 13. 文章 Hero 区域（single 页面标题 + 元数据毛玻璃） === */

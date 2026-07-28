@@ -123,6 +123,15 @@
     </ul>
 
     <div class="order-1 ml-auto flex items-center md:order-2 lg:ml-0">
+      <button
+        class="hidden items-center justify-center w-9 h-9 rounded-full border-0 bg-transparent cursor-pointer text-text-dark dark:text-white hover:bg-theme-light dark:hover:bg-darkmode-theme-light transition"
+        id="mobileMenuButton"
+        aria-label="打开目录"
+        aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
       {{ with site.Params.search }}
         {{ if .enable }}
           <button
