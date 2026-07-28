@@ -102,6 +102,10 @@ defaultContentLanguageInSubdir = false
 [[params.plugins.css]]
   link = "css/blog-list-redesign.css"
 
+# Homepage redesign — Apple Design Skill
+[[params.plugins.css]]
+  link = "css/home-redesign.css"
+
 # Article reading page styles (loaded last for highest specificity)
 [[params.plugins.css]]
   link = "css/article-reading.css"
@@ -136,6 +140,9 @@ defaultContentLanguageInSubdir = false
   lazy = true
 [[params.plugins.js]]
   link = "js/blog-list.js"
+  lazy = true
+[[params.plugins.js]]
+  link = "js/home-redesign.js"
   lazy = true
 [[params.plugins.js]]
   link = "js/article-reading.js"
