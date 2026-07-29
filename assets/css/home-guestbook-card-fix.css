@@ -1,4 +1,4 @@
-/* Homepage guestbook v4 — two independent Apple-style cards. */
+/* Homepage guestbook v5 — real Giscus composer + live scrolling history. */
 .home-guestbook-final {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
@@ -16,6 +16,7 @@
 .home-guestbook-history {
   position: relative;
   min-width: 0;
+  min-height: 560px;
   height: 100%;
   overflow: hidden;
   isolation: isolate;
@@ -29,7 +30,6 @@
   display: flex;
   flex-direction: column;
   padding: 32px;
-  border-right: 1px solid var(--home-line);
   background:
     radial-gradient(circle at 96% 0%, rgba(0, 113, 227, .21), transparent 315px),
     radial-gradient(circle at 0% 108%, rgba(191, 90, 242, .10), transparent 310px),
@@ -73,32 +73,122 @@
 .home-guestbook-compose-header,
 .home-guestbook-history-header {
   min-height: 68px;
+  flex: 0 0 auto;
   margin-bottom: 22px;
 }
-.home-guestbook-compose-header { align-items: center; }
+
+.home-guestbook-compose-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
 .home-guestbook-history-header { align-items: center; }
 .home-guestbook-final-service,
-.home-guestbook-note { display: none !important; }
+.home-guestbook-note,
+.home-guestbook-editor { display: none !important; }
 
-.home-guestbook-editor {
-  display: flex;
+.home-giscus-upload-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--home-blue);
+  background: var(--home-soft-blue);
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 630;
+  text-decoration: none;
+  transition: background 150ms ease, transform 120ms ease;
+}
+
+.home-giscus-upload-link:hover {
+  color: var(--home-blue);
+  background: color-mix(in srgb, var(--home-soft-blue) 78%, var(--home-blue) 8%);
+}
+
+.home-giscus-upload-link:active { transform: scale(.97); }
+
+.home-giscus-compose-shell {
+  position: relative;
+  min-height: 382px;
   flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 360px;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--home-line) 68%, var(--home-blue) 32%);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--home-surface-solid) 94%, transparent);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .055), inset 0 1px 0 rgba(255, 255, 255, .68);
+  transition: border-color 160ms ease, box-shadow 180ms var(--home-ease), transform 180ms var(--home-ease);
 }
-.home-guestbook-editor-main {
-  flex: 1 1 auto;
-  min-height: 250px;
+
+.home-giscus-compose-shell:focus-within {
+  border-color: color-mix(in srgb, var(--home-blue) 34%, var(--home-line));
+  box-shadow: 0 0 0 4px var(--home-soft-blue), 0 16px 42px rgba(0, 113, 227, .10);
+  transform: translateY(-1px);
 }
-.home-guestbook-editor textarea {
-  height: 100%;
-  min-height: 214px;
+
+.home-giscus-compose-loading {
+  position: absolute;
+  inset: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  color: var(--home-tertiary);
+  background: color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
 }
+
+.home-giscus-compose-loading[hidden] { display: none !important; }
+
+.home-giscus-compose,
+.home-giscus-compose .giscus,
+.home-giscus-compose .giscus-frame {
+  display: block;
+  width: 100%;
+  min-height: 338px;
+  border: 0;
+  background: transparent;
+}
+
+.home-giscus-compose .giscus-frame {
+  overflow: hidden;
+  color-scheme: light;
+}
+
+.dark .home-giscus-compose .giscus-frame { color-scheme: dark; }
+
+/* Right card keeps its existing content and buttons; only the list scrolls. */
 .home-guestbook-history-list {
+  min-height: 0;
+  height: 360px;
+  max-height: 360px;
   flex: 1 1 auto;
-  min-height: 360px;
-  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(134, 134, 139, .42) transparent;
 }
+
+.home-guestbook-history-list::-webkit-scrollbar { width: 8px; }
+.home-guestbook-history-list::-webkit-scrollbar-track { background: transparent; }
+.home-guestbook-history-list::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(134, 134, 139, .36);
+  background-clip: padding-box;
+}
+
 .home-guestbook-history-state { min-height: 100%; }
 .home-guestbook-history-more { flex: 0 0 auto; }
 
@@ -110,13 +200,19 @@
   font-size: 11px;
   font-weight: 580;
   cursor: pointer;
+  text-decoration: none;
 }
+
 .home-guestbook-comment-reply {
   color: var(--home-blue);
   font-size: 12px;
   font-weight: 620;
 }
-.home-guestbook-comment-action:hover { color: var(--home-blue); }
+
+.home-guestbook-comment-action:hover {
+  color: var(--home-blue);
+  text-decoration: none;
+}
 
 .dark .home-guestbook-compose-final {
   background:
@@ -124,6 +220,7 @@
     radial-gradient(circle at 0% 108%, rgba(191, 90, 242, .12), transparent 310px),
     color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
 }
+
 .dark .home-guestbook-history {
   background:
     radial-gradient(circle at 8% -2%, rgba(94, 92, 230, .22), transparent 285px),
@@ -131,127 +228,9 @@
     color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
 }
 
-/* Real GitHub Discussions interaction layer. */
-body.home-giscus-open { overflow: hidden; }
-.home-giscus-modal[hidden] { display: none !important; }
-.home-giscus-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 260;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-.home-giscus-modal.is-open { opacity: 1; }
-.home-giscus-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, .38);
-  backdrop-filter: blur(18px) saturate(130%);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
-}
-.home-giscus-dialog {
-  position: relative;
-  width: min(920px, 100%);
-  max-height: min(88vh, 900px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--home-line);
-  border-radius: 28px;
-  background: var(--home-surface-solid);
-  box-shadow: 0 32px 90px rgba(0, 0, 0, .28);
-  transform: translateY(16px) scale(.985);
-  transition: transform 220ms var(--home-spring);
-}
-.home-giscus-modal.is-open .home-giscus-dialog { transform: translateY(0) scale(1); }
-.home-giscus-dialog-header {
-  min-height: 76px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 18px 20px 17px 24px;
-  border-bottom: 1px solid var(--home-line);
-  background:
-    radial-gradient(circle at 96% -20%, rgba(0, 113, 227, .18), transparent 260px),
-    color-mix(in srgb, var(--home-surface-solid) 92%, transparent);
-}
-.home-giscus-dialog-header h2 {
-  margin: 0;
-  color: var(--home-text);
-  font-size: 22px;
-  line-height: 1.18;
-  letter-spacing: -.025em;
-  font-weight: 700;
-}
-.home-giscus-dialog-header p {
-  margin: 5px 0 0;
-  color: var(--home-secondary);
-  font-size: 13px;
-  line-height: 1.45;
-}
-.home-giscus-header-actions {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-  gap: 9px;
-}
-.home-giscus-native-link {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  color: var(--home-blue);
-  background: var(--home-soft-blue);
-  font-size: 13px;
-  font-weight: 630;
-  cursor: pointer;
-  transition: background 150ms ease, transform 120ms ease;
-}
-.home-giscus-native-link:hover { background: color-mix(in srgb, var(--home-soft-blue) 78%, var(--home-blue) 8%); }
-.home-giscus-native-link:active { transform: scale(.97); }
-.home-giscus-close {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 0;
-  border-radius: 50%;
-  color: var(--home-secondary);
-  background: var(--home-soft-gray);
-  cursor: pointer;
-  transition: color 150ms ease, background 150ms ease, transform 120ms ease;
-}
-.home-giscus-close:hover { color: var(--home-text); background: var(--home-soft-blue); }
-.home-giscus-close:active { transform: scale(.95); }
-.home-giscus-dialog-body {
-  min-height: 360px;
-  overflow-y: auto;
-  padding: 18px 20px 24px;
-  background: color-mix(in srgb, var(--home-soft-gray) 32%, transparent);
-}
-.home-giscus-loading {
-  padding: 22px;
-  border: 1px solid var(--home-line);
-  border-radius: 18px;
-  color: var(--home-secondary);
-  background: var(--home-surface-solid);
-  font-size: 13px;
-  text-align: center;
-}
-.home-giscus-loading[hidden] { display: none; }
-.home-giscus-root,
-.home-giscus-root .giscus,
-.home-giscus-root .giscus-frame {
-  display: block;
-  width: 100%;
-  min-height: 320px;
-  border: 0;
-  background: transparent;
+.dark .home-giscus-compose-shell {
+  background: color-mix(in srgb, var(--home-surface-solid) 92%, transparent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .30), inset 0 1px 0 rgba(255, 255, 255, .035);
 }
 
 @media (max-width: 960px) {
@@ -259,14 +238,18 @@ body.home-giscus-open { overflow: hidden; }
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  .home-guestbook-compose-final {
-    border-right: 1px solid var(--home-line);
-    border-bottom: 1px solid var(--home-line);
-  }
+
+  .home-guestbook-compose-final,
+  .home-guestbook-history { min-height: auto; }
+
   .home-guestbook-compose-header,
   .home-guestbook-history-header { min-height: auto; }
-  .home-guestbook-editor,
-  .home-guestbook-history-list { min-height: 300px; }
+
+  .home-giscus-compose-shell { min-height: 360px; }
+  .home-guestbook-history-list {
+    height: 330px;
+    max-height: 330px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -275,33 +258,47 @@ body.home-giscus-open { overflow: hidden; }
     padding: 24px 20px;
     border-radius: 26px;
   }
-  .home-guestbook-compose-header { flex-direction: row; }
-  .home-giscus-modal { padding: 10px; }
-  .home-giscus-dialog { max-height: 94vh; border-radius: 24px; }
-  .home-giscus-dialog-header { padding: 16px 14px 15px 18px; }
-  .home-giscus-dialog-header p { display: none; }
-  .home-giscus-dialog-body { padding: 12px 10px 18px; }
+
+  .home-guestbook-compose-header {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  .home-giscus-compose-shell {
+    min-height: 340px;
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .home-giscus-compose-loading { inset: 14px; }
+  .home-giscus-compose,
+  .home-giscus-compose .giscus,
+  .home-giscus-compose .giscus-frame { min-height: 312px; }
+
+  .home-guestbook-history-list {
+    height: 310px;
+    max-height: 310px;
+  }
 }
 
 @media (max-width: 480px) {
   .home-guestbook-final { gap: 14px; }
-  .home-guestbook-compose-header { align-items: flex-start; }
-  .home-giscus-native-link { min-height: 36px; padding: 0 11px; font-size: 12px; }
+  .home-guestbook-compose-header { gap: 12px; }
+  .home-giscus-upload-link {
+    min-height: 36px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-giscus-modal,
-  .home-giscus-dialog,
-  .home-giscus-close,
-  .home-giscus-native-link { transition-duration: .01ms !important; transform: none !important; }
+  .home-giscus-upload-link,
+  .home-giscus-compose-shell { transition-duration: .01ms !important; transform: none !important; }
+  .home-guestbook-history-list { scroll-behavior: auto; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .home-guestbook-compose-final,
   .home-guestbook-history,
-  .home-giscus-backdrop,
-  .home-giscus-dialog { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-  .home-guestbook-compose-final,
-  .home-guestbook-history,
-  .home-giscus-dialog { background: var(--home-surface-solid) !important; }
+  .home-giscus-compose-shell { background: var(--home-surface-solid) !important; }
 }
