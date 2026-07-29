@@ -21,26 +21,38 @@
   var refreshTimer = null;
   var burstTimers = [];
   var lastMetadataSignal = null;
+  var lastAcceptedTotal = null;
+  var lastAcceptedGeneratedAt = 0;
+  var pendingRegressionKey = "";
+  var pendingRegressionSince = 0;
+
+  var POLL_INTERVAL_MS = 5000;
+  var REGRESSION_CONFIRM_MS = 4500;
 
   var GISCUS_CONFIG = {
-    repo: "bluhuang/blogs-of-bluhuang",
+    repo: "bluhang/blogs-of-bluhuang".replace("bluhang", "bluhuang"),
     repoId: "R_kgDOStnEPg",
     category: "Announcements",
     categoryId: "DIC_kwDOStnEPs4C-eIQ",
     term: "blogs-of-bluhuang/guestbook/",
-    lightTheme: "https://cdn.jsdelivr.net/gh/bluhuang/auto-blog-poster@38cb0ee7767c88a73e9ece938558b52e76d6f1c2/static/css/giscus-apple-light.css",
-    darkTheme: "https://cdn.jsdelivr.net/gh/bluhuang/auto-blog-poster@38cb0ee7767c88a73e9ece938558b52e76d6f1c2/static/css/giscus-apple-dark.css"
+    lightTheme: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-light.css?v=20260729-1",
+    darkTheme: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-dark.css?v=20260729-1"
   };
 
   function mountRealComposer() {
     if (!composeCard) return;
+
+    giscusHost = composeCard.querySelector("[data-giscus-compose]");
+    giscusLoading = composeCard.querySelector("[data-giscus-loading]");
+    if (giscusHost) return;
+
     composeCard.innerHTML =
       '<header class="home-guestbook-compose-header">' +
         '<div class="home-guestbook-compose-title">' +
           '<span class="home-guestbook-final-icon" aria-hidden="true">' +
             '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M6.5 5.25h11A2.75 2.75 0 0 1 20.25 8v6.25A2.75 2.75 0 0 1 17.5 17H11l-4.75 3v-3H6.5a2.75 2.75 0 0 1-2.75-2.75V8A2.75 2.75 0 0 1 6.5 5.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
           '</span>' +
-          '<div><h2 id="home-guestbook-title">在这里留下一句话</h2><p>登录 GitHub 后直接发布。</p></div>' +
+          '<div><h2 id="home-guestbook-title">在这里留下一句话</h2><p>写下想聊的内容，登录 GitHub 后直接发布。</p></div>' +
         '</div>' +
         '<a class="home-giscus-upload-link" href="' + discussionUrl + '#new_comment_field" target="_blank" rel="noopener">添加图片</a>' +
       '</header>' +
@@ -66,7 +78,8 @@
   }
 
   function loadGiscus() {
-    if (!giscusHost) return;
+    if (!giscusHost || giscusHost.querySelector("iframe.giscus-frame") || giscusHost.querySelector("script[src*='giscus.app/client.js']")) return;
+
     var script = document.createElement("script");
     script.src = "https://giscus.app/client.js";
     script.setAttribute("data-repo", GISCUS_CONFIG.repo);
@@ -213,9 +226,35 @@
       data && data.available,
       data && data.totalCount,
       comments.map(function (comment) {
-        return [comment.id, comment.updatedAt, comment.reactionCount].join(":");
+        return [comment.id, comment.updatedAt, comment.reactionCount, comment.bodyText].join(":");
       }).join("|")
     ].join("::");
+  }
+
+  function shouldAcceptSnapshot(data) {
+    var nextTotal = Number(data && data.totalCount);
+    var generatedAt = Date.parse(data && data.generatedAt) || 0;
+    var comments = data && Array.isArray(data.comments) ? data.comments : [];
+
+    if (lastAcceptedGeneratedAt && generatedAt && generatedAt < lastAcceptedGeneratedAt) return false;
+
+    if (lastAcceptedTotal !== null && Number.isFinite(nextTotal) && nextTotal < lastAcceptedTotal) {
+      var regressionKey = nextTotal + "|" + comments.map(function (comment) { return comment.id; }).join("|");
+      var now = Date.now();
+      if (pendingRegressionKey !== regressionKey) {
+        pendingRegressionKey = regressionKey;
+        pendingRegressionSince = now;
+        return false;
+      }
+      if (now - pendingRegressionSince < REGRESSION_CONFIRM_MS) return false;
+    } else {
+      pendingRegressionKey = "";
+      pendingRegressionSince = 0;
+    }
+
+    if (Number.isFinite(nextTotal)) lastAcceptedTotal = nextTotal;
+    if (generatedAt) lastAcceptedGeneratedAt = Math.max(lastAcceptedGeneratedAt, generatedAt);
+    return true;
   }
 
   function renderGuestbook(data) {
@@ -255,7 +294,7 @@
     if (wasAtTop) {
       history.scrollTop = 0;
     } else {
-      history.scrollTop = Math.min(oldScrollTop, history.scrollHeight - history.clientHeight);
+      history.scrollTop = Math.min(oldScrollTop, Math.max(0, history.scrollHeight - history.clientHeight));
     }
   }
 
@@ -271,11 +310,17 @@
       var url = source + separator + "_rt=" + Date.now();
       var response = await window.fetch(url, {
         cache: "no-store",
-        headers: { Accept: "application/json" }
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache"
+        }
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
       var data = await response.json();
       if (serial !== requestSerial) return;
+      if (!shouldAcceptSnapshot(data)) return;
       var nextFingerprint = fingerprint(data);
       if (!force && nextFingerprint === currentFingerprint) return;
       currentFingerprint = nextFingerprint;
@@ -294,7 +339,7 @@
 
   function scheduleBurstRefresh() {
     clearBurstTimers();
-    [1000, 4000, 9000, 18000, 35000, 60000].forEach(function (delay) {
+    [500, 1500, 3000, 5000, 8000, 12000, 20000, 30000, 45000, 60000].forEach(function (delay) {
       burstTimers.push(window.setTimeout(function () {
         loadGuestbook(true);
       }, delay));
@@ -305,7 +350,7 @@
     window.clearInterval(refreshTimer);
     refreshTimer = window.setInterval(function () {
       if (!document.hidden) loadGuestbook(false);
-    }, 15000);
+    }, POLL_INTERVAL_MS);
   }
 
   window.addEventListener("message", function (event) {
@@ -319,12 +364,17 @@
       if (Number.isFinite(commentCount) && total) {
         total.textContent = commentCount + " 条留言";
       }
+
       var signal = [
         payload.discussion.totalCommentCount,
         payload.discussion.totalReplyCount,
         payload.discussion.reactionCount
       ].join(":");
-      if (lastMetadataSignal !== null && signal !== lastMetadataSignal) {
+
+      if (
+        (lastMetadataSignal !== null && signal !== lastMetadataSignal) ||
+        (lastAcceptedTotal !== null && Number.isFinite(commentCount) && commentCount !== lastAcceptedTotal)
+      ) {
         scheduleBurstRefresh();
       }
       lastMetadataSignal = signal;
