@@ -5,28 +5,29 @@ DeepSeek API, build a Hugo site, and deploy to GitHub Pages.
 
 ## Environment Variables
 
-| Variable           | Description                        |
-|--------------------|------------------------------------|
-| `DEEPSEEK_API_KEY` | API key for DeepSeek               |
-| `GH_PAT`           | Personal access token for Git ops and homepage Discussions export |
+| Variable | Description |
+|---|---|
+| `DEEPSEEK_API_KEY` | API key for DeepSeek |
+| `GH_PAT` | Personal access token for Git operations and homepage Discussions export |
+| `HOME_GUESTBOOK_DISCUSSION_NUMBER` | Optional homepage Discussion number; defaults to `2` |
 
 Copy `.env.example` to `.env` and fill in the values.
 
 ## Homepage Guestbook
 
-During each build, the pipeline reads the homepage GitHub Discussion with
-`GH_PAT` and writes a real-comment snapshot to
-`static/data/home-guestbook.json`. The homepage renders only that snapshot;
-it does not create demonstration users or messages. The custom editor stores
-the draft locally, copies it on publish, and opens the matching GitHub
-Discussion for authorization and posting.
+The homepage keeps its two-card layout while using the real Giscus client for
+all authenticated interactions. The in-page interaction layer is pinned to
+Discussion #2 and provides GitHub login, posting, replies, reactions, Markdown
+preview, and GitHub-supported attachments. The right card renders a real comment
+snapshot from `static/data/home-guestbook.json`.
+
+The deployment repository contains a `discussion_comment` workflow that refreshes
+the snapshot when Discussion #2 changes. The deployer preserves `.github` so the
+workflow survives later site deployments.
 
 ## Local Development
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the pipeline
 python main.py
 ```
