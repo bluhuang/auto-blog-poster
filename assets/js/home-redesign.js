@@ -17,9 +17,24 @@
   var more = root.querySelector("[data-guestbook-more]");
   var toast = root.querySelector("[data-guestbook-toast]");
   var source = root.getAttribute("data-source");
-  var discussionUrl = root.getAttribute("data-fallback-url") || "https://github.com/bluhuang/blogs-of-bluhuang/discussions";
+  var discussionUrl = "https://github.com/bluhuang/blogs-of-bluhuang/discussions/2";
   var draftKey = "bluhuang-home-guestbook-draft-v1";
   var toastTimer = null;
+  var modal = null;
+  var modalPanel = null;
+  var modalClose = null;
+  var modalGiscusRoot = null;
+  var previousFocus = null;
+  var giscusLoaded = false;
+  var refreshTimer = null;
+
+  var GISCUS_CONFIG = {
+    repo: "bluhuang/blogs-of-bluhuang",
+    repoId: "R_kgDOStnEPg",
+    category: "Announcements",
+    categoryId: "DIC_kwDOStnEPs4C-eIQ",
+    term: "blogs-of-bluhuang/guestbook/"
+  };
 
   function showToast(message) {
     if (!toast) return;
@@ -36,9 +51,7 @@
     count.textContent = input.value.length + "/500";
     try {
       window.localStorage.setItem(draftKey, input.value);
-    } catch (_) {
-      // Storage can be unavailable in privacy modes; editing should still work.
-    }
+    } catch (_) {}
   }
 
   function restoreDraft() {
@@ -46,9 +59,7 @@
     try {
       var saved = window.localStorage.getItem(draftKey);
       if (saved) input.value = saved.slice(0, 500);
-    } catch (_) {
-      // Ignore unavailable storage.
-    }
+    } catch (_) {}
     updateCount();
   }
 
@@ -57,8 +68,7 @@
     var start = input.selectionStart || 0;
     var end = input.selectionEnd || start;
     var selected = input.value.slice(start, end) || fallback;
-    var replacement = before + selected + after;
-    input.setRangeText(replacement, start, end, "end");
+    input.setRangeText(before + selected + after, start, end, "end");
     input.focus();
     updateCount();
   }
@@ -91,11 +101,9 @@
   function createState(title, description) {
     var state = document.createElement("div");
     state.className = "home-guestbook-history-state";
-
     var icon = document.createElement("span");
     icon.setAttribute("aria-hidden", "true");
     icon.innerHTML = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M6.5 5.25h11A2.75 2.75 0 0 1 20.25 8v6.25A2.75 2.75 0 0 1 17.5 17H11l-4.75 3v-3H6.5a2.75 2.75 0 0 1-2.75-2.75V8A2.75 2.75 0 0 1 6.5 5.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-
     var copy = document.createElement("div");
     var strong = document.createElement("strong");
     var paragraph = document.createElement("p");
@@ -103,7 +111,6 @@
     paragraph.textContent = description;
     copy.appendChild(strong);
     copy.appendChild(paragraph);
-
     state.appendChild(icon);
     state.appendChild(copy);
     return state;
@@ -144,15 +151,19 @@
 
     var footer = document.createElement("div");
     footer.className = "home-guestbook-comment-footer";
-    var reactions = document.createElement("span");
+    var reactions = document.createElement("button");
+    reactions.type = "button";
+    reactions.className = "home-guestbook-comment-action";
     reactions.textContent = "♡ " + Number(comment.reactionCount || 0);
-    var link = document.createElement("a");
-    link.href = comment.url || discussionUrl;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "查看与回复 ›";
+    reactions.setAttribute("aria-label", "添加表情");
+    var reply = document.createElement("button");
+    reply.type = "button";
+    reply.className = "home-guestbook-comment-action home-guestbook-comment-reply";
+    reply.textContent = "表情与回复 ›";
+    reactions.addEventListener("click", function () { openGiscus(false); });
+    reply.addEventListener("click", function () { openGiscus(false); });
     footer.appendChild(reactions);
-    footer.appendChild(link);
+    footer.appendChild(reply);
 
     content.appendChild(meta);
     content.appendChild(body);
@@ -165,9 +176,8 @@
   function renderGuestbook(data) {
     if (!history || !total) return;
     history.replaceChildren();
-
     if (data && data.discussionUrl) discussionUrl = data.discussionUrl;
-    if (more && discussionUrl) {
+    if (more) {
       more.href = discussionUrl;
       more.hidden = false;
     }
@@ -177,15 +187,13 @@
     total.textContent = totalCount + " 条留言";
 
     if (!data || data.available === false) {
-      history.appendChild(createState("暂时无法读取留言", "GitHub 数据同步暂不可用，请稍后刷新或前往 Discussions 查看。"));
+      history.appendChild(createState("暂时无法读取留言", "打开完整留言板仍可继续留言和互动。"));
       return;
     }
-
     if (!comments.length) {
-      history.appendChild(createState("还没有历史留言", "第一条真实留言发布后会显示在这里。"));
+      history.appendChild(createState("还没有历史留言", "第一条留言发布后会显示在这里。"));
       return;
     }
-
     comments.forEach(function (comment) {
       history.appendChild(createComment(comment));
     });
@@ -205,48 +213,131 @@
     }
   }
 
-  async function publishDraft() {
-    if (!input) return;
-    var text = input.value.trim();
-    if (!text) {
-      input.focus();
-      showToast("先写下一句话");
-      return;
-    }
+  function getGiscusTheme() {
+    return document.documentElement.classList.contains("dark") ? "noborder_dark" : "noborder_light";
+  }
 
-    try {
-      window.localStorage.setItem(draftKey, input.value);
-    } catch (_) {
-      // The draft remains in the textarea even if storage is unavailable.
-    }
+  function syncGiscusTheme() {
+    if (!modal) return;
+    var frame = modal.querySelector("iframe.giscus-frame");
+    if (!frame || !frame.contentWindow) return;
+    frame.contentWindow.postMessage({ giscus: { setConfig: { theme: getGiscusTheme() } } }, "https://giscus.app");
+  }
 
-    var copied = false;
-    try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
-    } catch (_) {
-      // Clipboard permissions vary by browser.
-    }
+  function createGiscusModal() {
+    if (modal) return;
+    modal = document.createElement("div");
+    modal.className = "home-giscus-modal";
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    modal.innerHTML = '<div class="home-giscus-backdrop" data-giscus-close></div>' +
+      '<section class="home-giscus-dialog" role="dialog" aria-modal="true" aria-labelledby="home-giscus-title">' +
+      '<header class="home-giscus-dialog-header"><div><h2 id="home-giscus-title">留言与互动</h2><p>登录 GitHub 后可发布、回复、添加表情和图片。</p></div>' +
+      '<button class="home-giscus-close" type="button" aria-label="关闭" data-giscus-close><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></header>' +
+      '<div class="home-giscus-dialog-body"><div class="home-giscus-loading" data-giscus-loading>正在加载 GitHub Discussion…</div><div class="home-giscus-root" data-giscus-root></div></div>' +
+      '</section>';
+    document.body.appendChild(modal);
+    modalPanel = modal.querySelector(".home-giscus-dialog");
+    modalClose = modal.querySelector(".home-giscus-close");
+    modalGiscusRoot = modal.querySelector("[data-giscus-root]");
+    modal.querySelectorAll("[data-giscus-close]").forEach(function (element) {
+      element.addEventListener("click", closeGiscus);
+    });
+  }
 
-    var target = discussionUrl + (discussionUrl.indexOf("#") === -1 ? "#new_comment_field" : "");
-    window.open(target, "_blank", "noopener");
-    showToast(copied ? "内容已复制，请在 GitHub 中粘贴并发布" : "已打开 GitHub；草稿仍保存在本页");
+  function loadGiscus() {
+    if (giscusLoaded || !modalGiscusRoot) return;
+    giscusLoaded = true;
+    var script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.setAttribute("data-repo", GISCUS_CONFIG.repo);
+    script.setAttribute("data-repo-id", GISCUS_CONFIG.repoId);
+    script.setAttribute("data-category", GISCUS_CONFIG.category);
+    script.setAttribute("data-category-id", GISCUS_CONFIG.categoryId);
+    script.setAttribute("data-mapping", "specific");
+    script.setAttribute("data-term", GISCUS_CONFIG.term);
+    script.setAttribute("data-strict", "1");
+    script.setAttribute("data-reactions-enabled", "1");
+    script.setAttribute("data-emit-metadata", "1");
+    script.setAttribute("data-input-position", "top");
+    script.setAttribute("data-theme", getGiscusTheme());
+    script.setAttribute("data-lang", "zh-CN");
+    script.setAttribute("crossorigin", "anonymous");
+    script.async = true;
+    modalGiscusRoot.appendChild(script);
+  }
+
+  function copyDraft() {
+    if (!input || !input.value.trim() || !navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(input.value.trim()).then(function () {
+      showToast("草稿已复制，可直接粘贴到留言框");
+    }).catch(function () {});
+  }
+
+  function openGiscus(shouldCopyDraft) {
+    createGiscusModal();
+    previousFocus = document.activeElement;
+    if (shouldCopyDraft) copyDraft();
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("home-giscus-open");
+    window.requestAnimationFrame(function () {
+      modal.classList.add("is-open");
+      if (modalClose) modalClose.focus();
+    });
+    loadGiscus();
+    window.clearInterval(refreshTimer);
+    refreshTimer = window.setInterval(loadGuestbook, 30000);
+  }
+
+  function closeGiscus() {
+    if (!modal || modal.hidden) return;
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("home-giscus-open");
+    window.clearInterval(refreshTimer);
+    window.setTimeout(function () {
+      modal.hidden = true;
+      if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
+    }, 180);
+    loadGuestbook();
   }
 
   root.querySelectorAll("[data-guestbook-tool]").forEach(function (button) {
     button.addEventListener("click", function () {
       var action = button.getAttribute("data-guestbook-tool");
       if (action === "markdown") insertText("**", "**", "文字");
-      if (action === "image") insertText("![", "](图片链接)", "图片说明");
-      if (action === "preview" && preview) {
-        preview.hidden = !preview.hidden;
-        preview.textContent = input && input.value.trim() ? input.value : "输入内容后可在这里预览。";
-      }
+      if (action === "image" || action === "preview") openGiscus(true);
     });
   });
 
   if (input) input.addEventListener("input", updateCount);
-  if (publishButton) publishButton.addEventListener("click", publishDraft);
+  if (publishButton) publishButton.addEventListener("click", function () { openGiscus(true); });
+  if (more) more.addEventListener("click", function (event) {
+    event.preventDefault();
+    openGiscus(false);
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && modal && !modal.hidden) closeGiscus();
+  });
+
+  window.addEventListener("message", function (event) {
+    if (event.origin !== "https://giscus.app") return;
+    var payload = event.data && event.data.giscus;
+    if (!payload) return;
+    var loading = modal && modal.querySelector("[data-giscus-loading]");
+    if (loading) loading.hidden = true;
+    if (payload.discussion && total) {
+      var metadataCount = Number(payload.discussion.totalCommentCount);
+      if (Number.isFinite(metadataCount)) total.textContent = metadataCount + " 条留言";
+    }
+  });
+
+  new MutationObserver(syncGiscusTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
 
   restoreDraft();
   loadGuestbook();
