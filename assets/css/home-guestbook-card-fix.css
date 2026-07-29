@@ -75,10 +75,8 @@
   min-height: 68px;
   margin-bottom: 22px;
 }
-
 .home-guestbook-compose-header { align-items: center; }
 .home-guestbook-history-header { align-items: center; }
-
 .home-guestbook-final-service,
 .home-guestbook-note { display: none !important; }
 
@@ -88,23 +86,19 @@
   flex-direction: column;
   min-height: 360px;
 }
-
 .home-guestbook-editor-main {
   flex: 1 1 auto;
   min-height: 250px;
 }
-
 .home-guestbook-editor textarea {
   height: 100%;
   min-height: 214px;
 }
-
 .home-guestbook-history-list {
   flex: 1 1 auto;
   min-height: 360px;
   max-height: none;
 }
-
 .home-guestbook-history-state { min-height: 100%; }
 .home-guestbook-history-more { flex: 0 0 auto; }
 
@@ -130,7 +124,6 @@
     radial-gradient(circle at 0% 108%, rgba(191, 90, 242, .12), transparent 310px),
     color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
 }
-
 .dark .home-guestbook-history {
   background:
     radial-gradient(circle at 8% -2%, rgba(94, 92, 230, .22), transparent 285px),
@@ -200,6 +193,26 @@ body.home-giscus-open { overflow: hidden; }
   font-size: 13px;
   line-height: 1.45;
 }
+.home-giscus-header-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 9px;
+}
+.home-giscus-native-link {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--home-blue);
+  background: var(--home-soft-blue);
+  font-size: 13px;
+  font-weight: 630;
+  cursor: pointer;
+  transition: background 150ms ease, transform 120ms ease;
+}
+.home-giscus-native-link:hover { background: color-mix(in srgb, var(--home-soft-blue) 78%, var(--home-blue) 8%); }
+.home-giscus-native-link:active { transform: scale(.97); }
 .home-giscus-close {
   width: 40px;
   height: 40px;
@@ -273,12 +286,14 @@ body.home-giscus-open { overflow: hidden; }
 @media (max-width: 480px) {
   .home-guestbook-final { gap: 14px; }
   .home-guestbook-compose-header { align-items: flex-start; }
+  .home-giscus-native-link { min-height: 36px; padding: 0 11px; font-size: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-giscus-modal,
   .home-giscus-dialog,
-  .home-giscus-close { transition-duration: .01ms !important; transform: none !important; }
+  .home-giscus-close,
+  .home-giscus-native-link { transition-duration: .01ms !important; transform: none !important; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
