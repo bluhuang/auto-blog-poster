@@ -1,4 +1,4 @@
-/* Homepage guestbook v5 — real Giscus composer + live scrolling history. */
+/* Homepage guestbook v6 — aligned real Giscus composer + independently scrolling history. */
 .home-guestbook-final {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
@@ -119,23 +119,22 @@
   min-height: 382px;
   flex: 1 1 auto;
   overflow: hidden;
-  padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--home-line) 68%, var(--home-blue) 32%);
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--home-line) 72%, var(--home-blue) 28%);
   border-radius: 22px;
   background: color-mix(in srgb, var(--home-surface-solid) 94%, transparent);
   box-shadow: 0 12px 34px rgba(0, 0, 0, .055), inset 0 1px 0 rgba(255, 255, 255, .68);
-  transition: border-color 160ms ease, box-shadow 180ms var(--home-ease), transform 180ms var(--home-ease);
+  transition: border-color 160ms ease, box-shadow 180ms var(--home-ease);
 }
 
 .home-giscus-compose-shell:focus-within {
   border-color: color-mix(in srgb, var(--home-blue) 34%, var(--home-line));
-  box-shadow: 0 0 0 4px var(--home-soft-blue), 0 16px 42px rgba(0, 113, 227, .10);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--home-soft-blue) 78%, transparent), 0 16px 42px rgba(0, 113, 227, .08);
 }
 
 .home-giscus-compose-loading {
   position: absolute;
-  inset: 18px;
+  inset: 16px;
   display: grid;
   place-items: center;
   border-radius: 17px;
@@ -153,7 +152,8 @@
 .home-giscus-compose .giscus-frame {
   display: block;
   width: 100%;
-  min-height: 338px;
+  min-height: 350px;
+  margin: 0;
   border: 0;
   background: transparent;
 }
@@ -165,7 +165,7 @@
 
 .dark .home-giscus-compose .giscus-frame { color-scheme: dark; }
 
-/* Right card keeps its existing content and buttons; only the list scrolls. */
+/* Keep the existing right card and its controls; only this list scrolls. */
 .home-guestbook-history-list {
   min-height: 0;
   height: 360px;
@@ -176,6 +176,7 @@
   overscroll-behavior: contain;
   scroll-behavior: smooth;
   padding-right: 6px;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(134, 134, 139, .42) transparent;
 }
