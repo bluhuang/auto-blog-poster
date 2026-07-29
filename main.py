@@ -12,6 +12,7 @@ from modules import (
     deepseek_client,
     deployer,
     git_ops,
+    guestbook_exporter,
     hugo_builder,
     site_validator,
 )
@@ -134,6 +135,14 @@ def main() -> None:
     except Exception as e:
         print(f"WARNING: Navigation tree generation failed: {e}")
 
+    # ── Step 3c: Export real homepage guestbook data ───────────────
+    print()
+    print("[3c/7] Exporting homepage guestbook ...")
+    try:
+        guestbook_exporter.export_home_guestbook(config)
+    except Exception as e:
+        print(f"WARNING: Homepage guestbook export failed: {e}")
+
     # ── Step 4: Build Hugo site ────────────────────────────────────
     print()
     print("[4/7] Building Hugo site ...")
@@ -175,7 +184,7 @@ def main() -> None:
         try:
             cache_persister.push_cache(config)
         except Exception as e:
-            print(f"FATAL: Failed to save cache: {e}")
+            print(f"FATAL: Failed to save processed cache: {e}")
             sys.exit(1)
 
     print()
