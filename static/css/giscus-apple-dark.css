@@ -1,0 +1,171 @@
+/*! Apple-style Giscus dark theme. Based on GitHub Primer color tokens (MIT). */
+main {
+  --color-prettylights-syntax-comment: #8b949e;
+  --color-prettylights-syntax-constant: #79c0ff;
+  --color-prettylights-syntax-entity: #d2a8ff;
+  --color-prettylights-syntax-storage-modifier-import: #f5f5f7;
+  --color-prettylights-syntax-entity-tag: #7ee787;
+  --color-prettylights-syntax-keyword: #ff7b72;
+  --color-prettylights-syntax-string: #a5d6ff;
+  --color-prettylights-syntax-variable: #ffa657;
+  --color-prettylights-syntax-brackethighlighter-unmatched: #f85149;
+  --color-prettylights-syntax-invalid-illegal-text: #f5f5f7;
+  --color-prettylights-syntax-invalid-illegal-bg: #8e1519;
+  --color-prettylights-syntax-carriage-return-text: #f5f5f7;
+  --color-prettylights-syntax-carriage-return-bg: #b62324;
+  --color-prettylights-syntax-string-regexp: #7ee787;
+  --color-prettylights-syntax-markup-list: #f2cc60;
+  --color-prettylights-syntax-markup-heading: #0a84ff;
+  --color-prettylights-syntax-markup-italic: #f5f5f7;
+  --color-prettylights-syntax-markup-bold: #f5f5f7;
+  --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
+  --color-prettylights-syntax-markup-deleted-bg: #67060c;
+  --color-prettylights-syntax-markup-inserted-text: #aff5b4;
+  --color-prettylights-syntax-markup-inserted-bg: #033a16;
+  --color-prettylights-syntax-markup-changed-text: #ffdfb6;
+  --color-prettylights-syntax-markup-changed-bg: #5a1e02;
+  --color-prettylights-syntax-markup-ignored-text: #f5f5f7;
+  --color-prettylights-syntax-markup-ignored-bg: #0a84ff;
+  --color-prettylights-syntax-meta-diff-range: #d2a8ff;
+  --color-prettylights-syntax-brackethighlighter-angle: #aeaeb2;
+  --color-prettylights-syntax-sublimelinter-gutter-mark: #636366;
+  --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
+  --color-btn-text: #f5f5f7;
+  --color-btn-bg: #2c2c2e;
+  --color-btn-border: rgba(255, 255, 255, .10);
+  --color-btn-shadow: none;
+  --color-btn-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+  --color-btn-hover-bg: #3a3a3c;
+  --color-btn-hover-border: rgba(255, 255, 255, .14);
+  --color-btn-active-bg: #444446;
+  --color-btn-active-border: rgba(255, 255, 255, .16);
+  --color-btn-selected-bg: #303033;
+  --color-btn-primary-text: #fff;
+  --color-btn-primary-bg: #0a84ff;
+  --color-btn-primary-border: transparent;
+  --color-btn-primary-shadow: 0 9px 24px rgba(10, 132, 255, .25);
+  --color-btn-primary-inset-shadow: none;
+  --color-btn-primary-hover-bg: #409cff;
+  --color-btn-primary-hover-border: transparent;
+  --color-btn-primary-selected-bg: #0077ed;
+  --color-btn-primary-selected-shadow: 0 4px 12px rgba(10, 132, 255, .18);
+  --color-btn-primary-disabled-text: rgba(255, 255, 255, .60);
+  --color-btn-primary-disabled-bg: rgba(10, 132, 255, .45);
+  --color-btn-primary-disabled-border: transparent;
+  --color-action-list-item-default-hover-bg: rgba(10, 132, 255, .12);
+  --color-segmented-control-bg: rgba(118, 118, 128, .18);
+  --color-segmented-control-button-bg: #2c2c2e;
+  --color-segmented-control-button-selected-border: rgba(255, 255, 255, .10);
+  --color-fg-default: #f5f5f7;
+  --color-fg-muted: #aeaeb2;
+  --color-fg-subtle: #98989d;
+  --color-canvas-default: transparent;
+  --color-canvas-overlay: #1c1c1e;
+  --color-canvas-inset: #151517;
+  --color-canvas-subtle: #232326;
+  --color-border-default: rgba(255, 255, 255, .11);
+  --color-border-muted: rgba(255, 255, 255, .08);
+  --color-neutral-muted: rgba(118, 118, 128, .22);
+  --color-accent-fg: #0a84ff;
+  --color-accent-emphasis: #0a84ff;
+  --color-accent-muted: rgba(10, 132, 255, .32);
+  --color-accent-subtle: rgba(10, 132, 255, .14);
+  --color-success-fg: #30d158;
+  --color-attention-fg: #ffd60a;
+  --color-attention-muted: rgba(255, 214, 10, .30);
+  --color-attention-subtle: rgba(255, 214, 10, .12);
+  --color-danger-fg: #ff453a;
+  --color-danger-muted: rgba(255, 69, 58, .30);
+  --color-danger-subtle: rgba(255, 69, 58, .12);
+  --color-primer-shadow-inset: none;
+  --color-scale-gray-7: #2c2c2e;
+  --color-scale-blue-8: #0a376d;
+  --color-social-reaction-bg-hover: var(--color-scale-gray-7);
+  --color-social-reaction-bg-reacted-hover: var(--color-scale-blue-8);
+}
+
+html, body, main {
+  color-scheme: dark;
+  background: transparent !important;
+}
+
+:host, html, body, main {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+main { padding: 0 !important; }
+.gsc-comments { margin: 0 !important; }
+.gsc-comments > .gsc-header,
+.gsc-comments > .gsc-timeline,
+.gsc-reactions { display: none !important; }
+
+.gsc-comment-box {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.gsc-comment-box-main { margin: 0 !important; }
+.gsc-comment-box-separator { display: none !important; }
+
+.gsc-comment-box-tabs {
+  width: fit-content !important;
+  margin: 0 0 12px !important;
+  padding: 4px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: rgba(118, 118, 128, .18) !important;
+}
+
+.gsc-comment-box-tabs .btn {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.gsc-comment-box-textarea,
+.form-control {
+  border: 1px solid rgba(255, 255, 255, .11) !important;
+  border-radius: 18px !important;
+  background: rgba(28, 28, 30, .96) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .035) !important;
+  color: #f5f5f7 !important;
+  font-size: 16px !important;
+  line-height: 1.58 !important;
+}
+
+.gsc-comment-box-textarea {
+  min-height: 184px !important;
+  padding: 16px !important;
+}
+
+.gsc-comment-box-textarea:focus,
+.form-control:focus {
+  border-color: rgba(10, 132, 255, .48) !important;
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, .15), 0 14px 34px rgba(0, 0, 0, .32) !important;
+}
+
+.gsc-comment-box-bottom { margin-top: 12px !important; }
+
+.btn {
+  min-height: 36px !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.btn-primary {
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-size: 14px !important;
+  font-weight: 650 !important;
+}
+
+.gsc-homepage-bg { background: transparent !important; }
