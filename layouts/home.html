@@ -181,37 +181,56 @@
       </div>
     </section>
 
-    <section class="home-guestbook-card home-guestbook-v2" id="home-guestbook" aria-labelledby="home-guestbook-title">
-      <header class="home-guestbook-v2-header">
-        <div class="home-guestbook-v2-title">
-          <span class="home-guestbook-icon" aria-hidden="true">
-            <svg width="25" height="25" viewBox="0 0 24 24" fill="none"><path d="M6.5 5.25h11A2.75 2.75 0 0 1 20.25 8v6.25A2.75 2.75 0 0 1 17.5 17H11l-4.75 3v-3H6.5a2.75 2.75 0 0 1-2.75-2.75V8A2.75 2.75 0 0 1 6.5 5.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </span>
-          <div><h2 id="home-guestbook-title">在这里留下一句话</h2><p>技术问题、项目建议、学习交流，或者只是打个招呼。</p></div>
-        </div>
-        <span class="home-guestbook-service">GitHub Discussions · Markdown</span>
-      </header>
+    <section class="home-guestbook-final" id="home-guestbook" aria-labelledby="home-guestbook-title" data-home-guestbook data-source="{{ "data/home-guestbook.json" | relURL }}" data-fallback-url="https://github.com/bluhuang/blogs-of-bluhuang/discussions">
+      <div class="home-guestbook-compose-final">
+        <header class="home-guestbook-compose-header">
+          <div class="home-guestbook-compose-title">
+            <span class="home-guestbook-final-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M6.5 5.25h11A2.75 2.75 0 0 1 20.25 8v6.25A2.75 2.75 0 0 1 17.5 17H11l-4.75 3v-3H6.5a2.75 2.75 0 0 1-2.75-2.75V8A2.75 2.75 0 0 1 6.5 5.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <div>
+              <h2 id="home-guestbook-title">在这里留下一句话</h2>
+              <p>技术问题、项目建议、学习交流，或者只是打个招呼。</p>
+            </div>
+          </div>
+          <span class="home-guestbook-final-service"><i aria-hidden="true"></i>GitHub Discussions · Markdown</span>
+        </header>
 
-      <div class="home-guestbook-v2-body">
-        <div class="home-guestbook-compose">
-          <div class="home-composer-label">
-            <strong>写留言</strong>
-            <a class="home-button home-button-primary home-composer-login" href="https://github.com/login?return_to=https%3A%2F%2Fbluhuang.github.io%2Fblogs-of-bluhuang%2F%23home-guestbook" target="_blank" rel="noopener">登录GitHub后留言{{ partial "home-arrow-icon" }}</a>
+        <div class="home-guestbook-editor" data-guestbook-editor>
+          <div class="home-guestbook-editor-main">
+            <span class="home-guestbook-avatar" aria-hidden="true">YOU</span>
+            <label class="sr-only" for="home-guestbook-input">留言内容</label>
+            <textarea id="home-guestbook-input" maxlength="500" rows="7" placeholder="写下想聊的内容……" data-guestbook-input></textarea>
           </div>
-          <div class="home-composer-card">
-            <span class="home-github-mark" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .8a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2.22c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.72 0-1.26.45-2.3 1.19-3.11-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.17 1.19a10.94 10.94 0 0 1 5.78 0c2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.77.11 3.06.74.81 1.19 1.85 1.19 3.11 0 4.44-2.71 5.42-5.29 5.71.42.36.79 1.07.79 2.16v3.2c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .8Z"/></svg></span>
-            <div><strong>使用真实 GitHub 身份参与</strong><p>登录后可使用 Markdown、回复与表情互动；所有内容直接同步到 GitHub Discussions。</p></div>
+          <div class="home-guestbook-toolbar">
+            <div class="home-guestbook-tools" aria-label="留言编辑工具">
+              <button type="button" data-guestbook-tool="markdown">Markdown</button>
+              <button type="button" data-guestbook-tool="image">图片</button>
+              <button type="button" data-guestbook-tool="preview">预览</button>
+            </div>
+            <div class="home-guestbook-publish">
+              <span data-guestbook-count>0/500</span>
+              <button class="home-button home-button-primary home-guestbook-publish-button" type="button" data-guestbook-publish>登录GitHub后留言{{ partial "home-arrow-icon" }}</button>
+            </div>
           </div>
-          <p class="home-composer-footnote"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 19 6v5.2c0 4.3-2.7 7.7-7 9.3-4.3-1.6-7-5-7-9.3V6l7-2.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>留言公开可见，并由 GitHub Discussions 保存。</p>
+          <div class="home-guestbook-preview" data-guestbook-preview hidden></div>
         </div>
-
-        <aside class="home-guestbook-comments" aria-label="真实留言">
-          <div class="home-comments-head"><strong>真实留言</strong><span>来自 GitHub Discussions</span></div>
-          <div class="home-guestbook-panel">
-            {{ partial "giscus" . }}
-          </div>
-        </aside>
+        <p class="home-guestbook-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 19 6v5.2c0 4.3-2.7 7.7-7 9.3-4.3-1.6-7-5-7-9.3V6l7-2.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>草稿保存在本机。点击发布后会复制内容并打开真实 GitHub Discussion。</p>
       </div>
+
+      <aside class="home-guestbook-history" aria-labelledby="home-guestbook-history-title">
+        <header class="home-guestbook-history-header">
+          <h3 id="home-guestbook-history-title">历史留言</h3>
+          <span data-guestbook-total>正在加载</span>
+        </header>
+        <div class="home-guestbook-history-list" data-guestbook-history aria-live="polite">
+          <div class="home-guestbook-history-state">
+            <span aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M6.5 5.25h11A2.75 2.75 0 0 1 20.25 8v6.25A2.75 2.75 0 0 1 17.5 17H11l-4.75 3v-3H6.5a2.75 2.75 0 0 1-2.75-2.75V8A2.75 2.75 0 0 1 6.5 5.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+            <strong>正在读取真实历史留言</strong>
+            <p>留言数据来自 GitHub Discussions，不生成演示内容。</p>
+          </div>
+        </div>
+        <a class="home-guestbook-history-more" href="https://github.com/bluhuang/blogs-of-bluhuang/discussions" target="_blank" rel="noopener" data-guestbook-more hidden>查看全部留言{{ partial "home-arrow-icon" }}</a>
+      </aside>
+      <div class="home-guestbook-toast" role="status" aria-live="polite" data-guestbook-toast></div>
     </section>
   </div>
 </div>
