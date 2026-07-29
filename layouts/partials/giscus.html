@@ -1,3 +1,4 @@
+{{ $page := . }}
 {{ with site.Params.giscus }}
   {{ if .enable }}
     <div class="mt-16">
@@ -11,26 +12,26 @@
         data-mapping="{{ .mapping }}"
         data-reactions-enabled="{{ .reactions_enabled }}"
         data-emit-metadata="{{ .emit_metadata }}"
-        data-input-position="{{ .input_position }}"
+        data-input-position="{{ if $page.IsHome }}top{{ else }}{{ .input_position }}{{ end }}"
         data-lang="{{ .lang }}"
-        data-theme="light"
+        data-theme="{{ if $page.IsHome }}noborder_light{{ else }}light{{ end }}"
         crossorigin="anonymous"
         async>
       </script>
       <script>
         (function () {
-          var LIGHT_THEMES = ['light', 'noborder_light'];
-          var DARK_THEMES = ['noborder_dark', 'dark_dimmed', 'dark'];
+          var HOME_GISCUS = {{ if $page.IsHome }}true{{ else }}false{{ end }};
           function getTheme() {
-            return document.documentElement.classList.contains('dark')
-              ? DARK_THEMES[1] : LIGHT_THEMES[0];
+            if (document.documentElement.classList.contains('dark')) {
+              return HOME_GISCUS ? 'noborder_dark' : 'dark_dimmed';
+            }
+            return HOME_GISCUS ? 'noborder_light' : 'light';
           }
           function syncGiscus() {
             if (window.giscus && typeof window.giscus.setTheme === 'function') {
               try { window.giscus.setTheme(getTheme()); } catch (e) {}
             }
           }
-          // 轮询等待 giscus 加载完成，确保初始主题正确
           function waitAndSync(attempts) {
             attempts = attempts || 0;
             if (attempts > 50) return;
@@ -40,11 +41,9 @@
             }
           }
           waitAndSync();
-          // 监听 <html> class 变化（主题切换）
           new MutationObserver(syncGiscus).observe(document.documentElement, {
             attributes: true, attributeFilter: ['class']
           });
-          // 兜底：用户点击主题切换按钮后立即触发
           document.addEventListener('click', function (e) {
             var t = e.target;
             if (t && (t.closest('[data-theme-switcher]') || t.closest('.theme-switcher'))) {
