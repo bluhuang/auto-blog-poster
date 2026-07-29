@@ -1,0 +1,186 @@
+/* Homepage guestbook v4 — two independent Apple-style cards. */
+.home-guestbook-final {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
+  align-items: stretch;
+  gap: 18px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+}
+
+.home-guestbook-compose-final,
+.home-guestbook-history {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--home-line);
+  border-radius: 30px;
+  box-shadow: var(--home-shadow);
+  background-clip: padding-box;
+}
+
+.home-guestbook-compose-final {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  border-right: 1px solid var(--home-line);
+  background:
+    radial-gradient(circle at 96% 0%, rgba(0, 113, 227, .21), transparent 315px),
+    radial-gradient(circle at 0% 108%, rgba(191, 90, 242, .10), transparent 310px),
+    color-mix(in srgb, var(--home-surface-solid) 86%, transparent);
+}
+
+.home-guestbook-history {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 8% -2%, rgba(94, 92, 230, .18), transparent 285px),
+    radial-gradient(circle at 108% 102%, rgba(0, 113, 227, .15), transparent 300px),
+    color-mix(in srgb, var(--home-surface-solid) 84%, transparent);
+}
+
+.home-guestbook-compose-final::before,
+.home-guestbook-history::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(2px);
+}
+
+.home-guestbook-compose-final::before {
+  right: -120px;
+  bottom: -135px;
+  background: radial-gradient(circle, rgba(48, 209, 88, .09), transparent 68%);
+}
+
+.home-guestbook-history::before {
+  left: -125px;
+  bottom: -140px;
+  background: radial-gradient(circle, rgba(90, 200, 250, .10), transparent 68%);
+}
+
+.home-guestbook-compose-header,
+.home-guestbook-history-header {
+  min-height: 68px;
+  margin-bottom: 22px;
+}
+
+.home-guestbook-compose-header {
+  align-items: center;
+}
+
+.home-guestbook-history-header {
+  align-items: center;
+}
+
+.home-guestbook-final-service,
+.home-guestbook-note {
+  display: none !important;
+}
+
+.home-guestbook-editor {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 360px;
+}
+
+.home-guestbook-editor-main {
+  flex: 1 1 auto;
+  min-height: 250px;
+}
+
+.home-guestbook-editor textarea {
+  height: 100%;
+  min-height: 214px;
+}
+
+.home-guestbook-history-list {
+  flex: 1 1 auto;
+  min-height: 360px;
+  max-height: none;
+}
+
+.home-guestbook-history-state {
+  min-height: 100%;
+}
+
+.home-guestbook-history-more {
+  flex: 0 0 auto;
+}
+
+.dark .home-guestbook-compose-final {
+  background:
+    radial-gradient(circle at 96% 0%, rgba(10, 132, 255, .24), transparent 315px),
+    radial-gradient(circle at 0% 108%, rgba(191, 90, 242, .12), transparent 310px),
+    color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
+}
+
+.dark .home-guestbook-history {
+  background:
+    radial-gradient(circle at 8% -2%, rgba(94, 92, 230, .22), transparent 285px),
+    radial-gradient(circle at 108% 102%, rgba(10, 132, 255, .18), transparent 300px),
+    color-mix(in srgb, var(--home-surface-solid) 88%, transparent);
+}
+
+@media (max-width: 960px) {
+  .home-guestbook-final {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .home-guestbook-compose-final {
+    border-right: 1px solid var(--home-line);
+    border-bottom: 1px solid var(--home-line);
+  }
+
+  .home-guestbook-compose-header,
+  .home-guestbook-history-header {
+    min-height: auto;
+  }
+
+  .home-guestbook-editor,
+  .home-guestbook-history-list {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 680px) {
+  .home-guestbook-compose-final,
+  .home-guestbook-history {
+    padding: 24px 20px;
+    border-radius: 26px;
+  }
+
+  .home-guestbook-compose-header {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-guestbook-final {
+    gap: 14px;
+  }
+
+  .home-guestbook-compose-header {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .home-guestbook-compose-final,
+  .home-guestbook-history {
+    background: var(--home-surface-solid) !important;
+  }
+}
