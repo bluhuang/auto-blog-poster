@@ -1,0 +1,63 @@
+/* Homepage v3 — aligned project stack and real Giscus guestbook. */
+.home-redesign-page .home-hero::before{width:620px;height:620px;right:-170px;top:-245px;background:radial-gradient(circle at 42% 48%,rgba(0,113,227,.29),rgba(0,113,227,.08) 42%,rgba(0,113,227,0) 72%),radial-gradient(circle at 76% 28%,rgba(100,210,255,.18),transparent 48%)}
+.home-redesign-page .home-hero::after{width:430px;height:430px;left:12%;bottom:-315px;background:radial-gradient(circle,rgba(94,92,230,.19),rgba(191,90,242,.06) 40%,transparent 72%)}
+.dark .home-redesign-page .home-hero::before{background:radial-gradient(circle at 42% 48%,rgba(10,132,255,.34),rgba(10,132,255,.1) 42%,rgba(10,132,255,0) 72%),radial-gradient(circle at 76% 28%,rgba(100,210,255,.17),transparent 48%)}
+.dark .home-redesign-page .home-hero::after{background:radial-gradient(circle,rgba(94,92,230,.26),rgba(191,90,242,.08) 42%,transparent 72%)}
+
+.home-story-grid-v2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(310px,.75fr);gap:18px;align-items:stretch}
+.home-automation-suite,.home-story-side{min-width:0;width:100%;min-height:700px;box-sizing:border-box}
+.home-automation-suite{position:relative;isolation:isolate;display:flex;flex-direction:column;padding:34px;overflow:hidden;border:1px solid var(--home-line);border-radius:var(--home-radius-large);background:radial-gradient(circle at 92% 3%,rgba(0,113,227,.18),transparent 280px),radial-gradient(circle at 5% 100%,rgba(94,92,230,.12),transparent 320px),var(--home-surface);box-shadow:var(--home-shadow)}
+.home-automation-suite::after{content:"";position:absolute;z-index:-1;width:330px;height:330px;right:-155px;bottom:-175px;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.12),transparent 68%);pointer-events:none}
+.home-automation-suite-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.home-automation-suite-head>div{min-width:0;max-width:700px}
+.home-automation-suite h3{margin:15px 0 0;color:var(--home-text);font-size:clamp(27px,3vw,36px);line-height:1.04;letter-spacing:-.038em;font-weight:720}
+.home-automation-suite-head p{max-width:700px;margin:13px 0 0;color:var(--home-secondary);font-size:13.5px;line-height:1.64}
+.home-automation-status{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;margin-top:2px;color:var(--home-tertiary);font-size:11px;font-weight:570;white-space:nowrap}
+.home-automation-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 0 5px rgba(48,209,88,.11)}
+.home-automation-stages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:30px;perspective:1000px}
+.home-automation-stage{min-height:190px;display:flex;flex-direction:column;padding:20px;border:1px solid color-mix(in srgb,var(--home-line) 74%,#fff 26%);border-radius:20px;background:color-mix(in srgb,var(--home-surface-solid) 88%,transparent);box-shadow:0 13px 32px rgba(0,0,0,.075),0 1px 0 rgba(255,255,255,.65) inset;transform-origin:center;transition:transform 240ms var(--home-spring),box-shadow 240ms var(--home-spring),border-color 180ms ease}
+.home-automation-stage:nth-child(1){transform:translateY(5px) rotate(-.55deg)}
+.home-automation-stage:nth-child(2){transform:translateY(-3px) rotate(.45deg)}
+.home-automation-stage:nth-child(3){transform:translateY(3px) rotate(.35deg)}
+.home-automation-stage:nth-child(4){transform:translateY(-5px) rotate(-.45deg)}
+.home-automation-stage:hover{z-index:2;transform:translateY(-7px) rotate(0) scale(1.012);border-color:color-mix(in srgb,var(--home-blue) 24%,var(--home-line));box-shadow:0 20px 43px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.72) inset}
+.home-stage-top{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.home-stage-top>span:first-child{color:var(--home-blue);font-size:11px;font-weight:740}
+.home-stage-icon{width:35px;height:35px;display:grid;place-items:center;border-radius:11px;color:var(--home-blue);background:var(--home-soft-blue)}
+.home-automation-stage h4{margin:17px 0 0;color:var(--home-text);font-size:17px;line-height:1.2;letter-spacing:-.017em;font-weight:690}
+.home-stage-basic{margin:7px 0 0;color:var(--home-secondary);font-size:12.3px;line-height:1.5}
+.home-stage-capability{margin:auto 0 0;padding-top:15px;color:var(--home-tertiary);font-size:10.8px;line-height:1.45;font-weight:560}
+.home-stage-capability strong{color:var(--home-blue);font-weight:680}
+.home-automation-project-cta{margin-top:auto;padding-top:30px;display:flex;align-items:center;justify-content:space-between;gap:22px}
+.home-automation-project-cta strong{display:block;color:var(--home-text);font-size:15px;letter-spacing:-.012em}
+.home-automation-project-cta span{display:block;margin-top:5px;color:var(--home-tertiary);font-size:11.5px}
+
+.home-story-side{display:grid;grid-template-rows:minmax(0,1fr) 205px;gap:18px;align-self:stretch}
+.home-story-side>*{width:100%;min-width:0;margin:0;box-sizing:border-box}
+.home-story-side .home-dog-card{min-height:0;height:100%;aspect-ratio:auto;align-self:stretch}
+.home-story-side .home-dog-card img{display:block;width:100%;height:100%;min-height:0;object-fit:cover}
+.home-contact-card-compact{min-height:205px;height:205px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:22px;padding:27px;border:1px solid var(--home-line);border-radius:26px;background:radial-gradient(circle at 103% -8%,rgba(0,113,227,.22),transparent 220px),linear-gradient(145deg,var(--home-surface),color-mix(in srgb,var(--home-soft-blue) 28%,var(--home-surface-solid)));box-shadow:var(--home-shadow)}
+.home-contact-card-compact h2{max-width:320px;margin:0;color:var(--home-text);font-size:clamp(24px,2.7vw,31px);line-height:1.06;letter-spacing:-.033em;font-weight:700}
+.home-contact-card-compact p{max-width:320px;margin:9px 0 0;color:var(--home-secondary);font-size:13px;line-height:1.5}
+.home-contact-card-compact .home-contact-actions{width:100%;display:flex;align-items:center;gap:10px}
+.home-contact-card-compact .home-button{flex:1 1 0;min-width:0}
+
+.home-guestbook-compact{margin-top:78px}
+.home-guestbook-compact .home-guestbook-hero{padding:27px 30px 23px;background:radial-gradient(circle at 94% -8%,rgba(0,113,227,.18),transparent 270px),color-mix(in srgb,var(--home-surface-solid) 78%,transparent)}
+.home-guestbook-auth{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:20px 24px 0;padding:16px 18px;border:1px solid color-mix(in srgb,var(--home-blue) 16%,var(--home-line));border-radius:18px;background:var(--home-soft-blue)}
+.home-guestbook-auth-copy{min-width:0;display:flex;align-items:center;gap:13px}
+.home-github-mark{width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto;border-radius:13px;color:var(--home-text);background:color-mix(in srgb,var(--home-surface-solid) 84%,transparent);box-shadow:0 8px 20px rgba(0,0,0,.07)}
+.home-guestbook-auth-copy strong{display:block;color:var(--home-text);font-size:13.5px;font-weight:680}
+.home-guestbook-auth-copy p{margin:4px 0 0;color:var(--home-secondary);font-size:11.5px;line-height:1.45}
+.home-github-login{flex:0 0 auto;min-width:150px}
+.home-guestbook-compact .home-guestbook-panel{margin:16px 24px 24px;padding:8px 12px 12px;background:color-mix(in srgb,var(--home-surface-solid) 88%,transparent)}
+.home-guestbook-compact .home-guestbook-panel> .mt-16{margin-top:0!important}
+.home-guestbook-compact .home-guestbook-panel> .mt-16>h2{display:none}
+.home-guestbook-compact .home-guestbook-panel #giscus{min-height:0}
+.home-guestbook-compact .home-guestbook-panel .giscus,.home-guestbook-compact .home-guestbook-panel .giscus-frame{display:block;width:100%;border:0;border-radius:14px;background:transparent}
+
+@media(max-width:1020px){.home-story-grid-v2{grid-template-columns:1fr}.home-automation-suite,.home-story-side{min-height:0}.home-story-side{grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);grid-template-rows:none}.home-story-side .home-dog-card,.home-contact-card-compact{min-height:390px;height:390px}}
+@media(max-width:760px){.home-automation-suite{padding:28px 24px}.home-automation-suite-head{flex-direction:column;gap:12px}.home-automation-stages{grid-template-columns:1fr}.home-automation-stage:nth-child(n){transform:none}.home-automation-project-cta{align-items:flex-start;flex-direction:column}.home-story-side{grid-template-columns:1fr}.home-story-side .home-dog-card{min-height:350px;height:350px}.home-contact-card-compact{min-height:220px;height:auto}.home-guestbook-compact .home-guestbook-hero{grid-template-columns:48px minmax(0,1fr);padding:24px 22px 20px}.home-guestbook-compact .home-guestbook-icon{width:48px;height:48px;border-radius:15px}.home-guestbook-compact .home-guestbook-service{grid-column:1/-1;width:fit-content}.home-guestbook-auth{align-items:flex-start;flex-direction:column;margin:18px 18px 0}.home-github-login{width:100%}.home-guestbook-compact .home-guestbook-panel{margin:14px 14px 16px;padding:6px 8px 10px}}
+@media(max-width:520px){.home-automation-suite{padding:24px 18px}.home-contact-card-compact .home-contact-actions{flex-direction:column;align-items:stretch}.home-contact-card-compact .home-button{width:100%}.home-guestbook-compact .home-guestbook-hero{grid-template-columns:1fr}.home-guestbook-auth-copy{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.home-automation-stage{transition-duration:.01ms!important;transform:none!important}}
+@media(prefers-reduced-transparency:reduce){.home-automation-suite,.home-automation-stage,.home-contact-card-compact,.home-guestbook-auth,.home-guestbook-compact .home-guestbook-panel{background:var(--home-surface-solid)!important}}
