@@ -87,6 +87,53 @@ jobs:
           path: /tmp/auto_blog_output.log
           retention-days: 7
 
+      - name: Persist sanitized failure summary
+        if: failure()
+        shell: bash
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          SUMMARY=/tmp/ci_failure_summary.txt
+          {
+            echo "workflow_commit=${GITHUB_SHA}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo "===== last 400 log lines ====="
+            if [ -f /tmp/auto_blog_output.log ]; then
+              tail -n 400 /tmp/auto_blog_output.log
+            else
+              echo "auto_blog_output.log was not created; failure occurred before the pipeline step."
+            fi
+          } > "$SUMMARY"
+          python - "$SUMMARY" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8", errors="replace")
+          patterns = [
+              (r"(?i)(authorization\s*[:=]\s*bearer\s+)[^\s]+", r"\1[REDACTED]"),
+              (r"(?i)((?:api[_-]?key|token|password|secret)\s*[:=]\s*)[^\s]+", r"\1[REDACTED]"),
+              (r"https://x-access-token:[^@\s]+@github\.com", "https://x-access-token:[REDACTED]@github.com"),
+          ]
+          for pattern, replacement in patterns:
+              text = re.sub(pattern, replacement, text)
+          path.write_text(text, encoding="utf-8")
+          PY
+          rm -rf /tmp/blog-cache-diagnostics
+          git clone --depth=1 --branch processed-cache "https://x-access-token:${GH_PAT}@github.com/bluhuang/blogs-of-bluhuang.git" /tmp/blog-cache-diagnostics
+          cp "$SUMMARY" /tmp/blog-cache-diagnostics/.ci_failure_summary.txt
+          cd /tmp/blog-cache-diagnostics
+          git config user.name "Auto Blog Poster"
+          git config user.email "actions@github.com"
+          git add .ci_failure_summary.txt
+          git commit -m "Update CI failure diagnostic [skip ci]" || true
+          git push origin processed-cache
+
       - name: Upload public artifact (for debugging)
         if: always()
         uses: actions/upload-artifact@v4
