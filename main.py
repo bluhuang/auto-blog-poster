@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from modules import (
     cache_persister,
     content_processor,
+    content_time_preserver,
     deepseek_client,
     deployer,
     git_ops,
@@ -133,6 +134,10 @@ def main() -> None:
             config=config,
             deepseek_client_func=counted_deepseek_call,
             hash_cache_path=cache_file,
+        )
+        content_time_preserver.reconcile_content_update_times(
+            source_root=str(notes_root),
+            config=config,
         )
         print(f"DeepSeek API calls: {deepseek_calls}")
         if args.deepseek_cache_only and deepseek_calls != 0:
