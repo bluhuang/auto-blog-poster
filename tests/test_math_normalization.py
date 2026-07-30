@@ -48,6 +48,17 @@ $$
         self.assertIn(r"R\\ G\\ B", normalized)
         self.assertNotIn("R" + "\\" * 3, normalized)
 
+    def test_repairs_numeric_row_start_in_cases_environment(self) -> None:
+        source = r"""$$
+U_{l+1}(i,j)=\begin{cases}G_{l+1}(i/2,j/2),&i,j\text{ 均为偶数}\0,&\text{其他位置}\end{cases}
+$$
+"""
+
+        normalized = normalize_math_delimiters(source)
+        validate_math_lint(source)
+
+        self.assertIn(r"\text{ 均为偶数}\\0,&\text{其他位置}", normalized)
+
 
 if __name__ == "__main__":
     unittest.main()

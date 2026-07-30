@@ -229,7 +229,7 @@ def normalize_math_delimiters(content: str) -> str:
 
 
 def _repair_matrix_row_separators(body: str) -> str:
-    """Repair only single trailing slashes inside known matrix environments."""
+    """Repair unambiguous single slashes inside known matrix environments."""
     repaired: List[str] = []
     active_environments: List[str] = []
     begin_pattern = re.compile(r"\\begin\{([^}]+)\}")
@@ -248,6 +248,13 @@ def _repair_matrix_row_separators(body: str) -> str:
             body_line, line_ending = body_line[:-1], "\n"
 
         if active_environments:
+            # Numeric TeX control sequences such as ``\0`` are invalid. Inside
+            # matrices/cases they unambiguously represent a missing row slash.
+            body_line = re.sub(
+                r"(?<!\\)\\(?=\d)",
+                lambda _match: "\\\\",
+                body_line,
+            )
             body_line = re.sub(
                 r"(?<!\\)\\([ \t]*)$",
                 lambda match: "\\\\" + match.group(1),
