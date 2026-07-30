@@ -46,7 +46,7 @@ $$
         validate_math_lint(source)
 
         self.assertIn(r"R\\ G\\ B", normalized)
-        self.assertNotIn(r"R\\\", normalized)
+        self.assertNotIn("R" + "\\" * 3, normalized)
 
 
 if __name__ == "__main__":
