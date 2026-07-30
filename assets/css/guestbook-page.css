@@ -1,0 +1,206 @@
+/* Guestbook page: visual redesign only; Giscus behavior remains unchanged. */
+body:has(.guestbook-redesign) {
+  background:
+    radial-gradient(circle at 92% 4%, rgba(0, 113, 227, .10), transparent 32rem),
+    radial-gradient(circle at 4% 46%, rgba(94, 92, 230, .06), transparent 34rem),
+    #f5f5f7;
+}
+
+.dark body:has(.guestbook-redesign) {
+  background:
+    radial-gradient(circle at 92% 4%, rgba(10, 132, 255, .14), transparent 32rem),
+    radial-gradient(circle at 4% 46%, rgba(94, 92, 230, .10), transparent 34rem),
+    #000;
+}
+
+.guestbook-page-section {
+  padding: 34px 0 92px;
+}
+
+.guestbook-page-container {
+  width: min(calc(100% - 40px), 980px);
+  max-width: none;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.guestbook-redesign {
+  --guestbook-surface: rgba(255, 255, 255, .88);
+  --guestbook-surface-solid: #fff;
+  --guestbook-text: #1d1d1f;
+  --guestbook-secondary: #6e6e73;
+  --guestbook-tertiary: #86868b;
+  --guestbook-line: rgba(0, 0, 0, .08);
+  --guestbook-blue: #0071e3;
+  --guestbook-blue-soft: rgba(0, 113, 227, .10);
+  --guestbook-shadow: 0 1px 2px rgba(0, 0, 0, .025), 0 20px 56px rgba(0, 0, 0, .07);
+  color: var(--guestbook-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.dark .guestbook-redesign {
+  --guestbook-surface: rgba(28, 28, 30, .90);
+  --guestbook-surface-solid: #1c1c1e;
+  --guestbook-text: #f5f5f7;
+  --guestbook-secondary: #aeaeb2;
+  --guestbook-tertiary: #98989d;
+  --guestbook-line: rgba(255, 255, 255, .10);
+  --guestbook-blue: #0a84ff;
+  --guestbook-blue-soft: rgba(10, 132, 255, .17);
+  --guestbook-shadow: 0 1px 1px rgba(255, 255, 255, .025) inset, 0 22px 64px rgba(0, 0, 0, .44);
+}
+
+.guestbook-hero,
+.guestbook-discussion-card {
+  border: 1px solid var(--guestbook-line);
+  background: var(--guestbook-surface);
+  box-shadow: var(--guestbook-shadow);
+}
+
+.guestbook-hero {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 34px 38px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 95% -20%, rgba(0, 113, 227, .20), transparent 290px),
+    radial-gradient(circle at 0 120%, rgba(94, 92, 230, .09), transparent 290px),
+    var(--guestbook-surface);
+}
+
+.dark .guestbook-hero {
+  background:
+    radial-gradient(circle at 95% -20%, rgba(10, 132, 255, .22), transparent 290px),
+    radial-gradient(circle at 0 120%, rgba(94, 92, 230, .14), transparent 290px),
+    var(--guestbook-surface);
+}
+
+.guestbook-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 190px;
+  height: 190px;
+  right: -95px;
+  bottom: -122px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(48, 209, 88, .13), transparent 70%);
+  pointer-events: none;
+}
+
+.guestbook-eyebrow,
+.guestbook-discussion-label {
+  margin: 0;
+  color: var(--guestbook-blue);
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 680;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.guestbook-hero h1 {
+  margin: 9px 0 0;
+  color: var(--guestbook-text);
+  font-size: clamp(36px, 5vw, 48px);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+  font-weight: 730;
+}
+
+.guestbook-description {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: var(--guestbook-secondary);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.guestbook-discussion-card {
+  margin-top: 22px;
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.guestbook-discussion-heading h2 {
+  margin: 7px 0 0;
+  color: var(--guestbook-text);
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: -.03em;
+  font-weight: 700;
+}
+
+.guestbook-discussion-card > .mt-16 {
+  margin-top: 22px !important;
+}
+
+.guestbook-discussion-card > .mt-16 > .h4 {
+  display: none;
+}
+
+.guestbook-discussion-card #giscus {
+  min-height: 220px;
+}
+
+.guestbook-discussion-card .giscus,
+.guestbook-discussion-card .giscus-frame {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .guestbook-page-section {
+    padding: 18px 0 60px;
+  }
+
+  .guestbook-page-container {
+    width: calc(100% - 24px);
+  }
+
+  .guestbook-hero {
+    min-height: 158px;
+    padding: 25px 22px 27px;
+    border-radius: 25px;
+  }
+
+  .guestbook-hero h1 {
+    font-size: 36px;
+  }
+
+  .guestbook-description {
+    font-size: 14px;
+  }
+
+  .guestbook-discussion-card {
+    margin-top: 14px;
+    padding: 22px 18px;
+    border-radius: 24px;
+  }
+
+  .guestbook-discussion-card > .mt-16 {
+    margin-top: 18px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guestbook-redesign *,
+  .guestbook-redesign *::before,
+  .guestbook-redesign *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .guestbook-hero,
+  .guestbook-discussion-card {
+    background: var(--guestbook-surface-solid) !important;
+  }
+}
