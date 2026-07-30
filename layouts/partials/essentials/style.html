@@ -55,6 +55,8 @@
 {{ $aboutPageCSS := resources.Get "css/about-page.css" }}
 {{ $blogsPageCSS := resources.Get "css/blogs-page.css" }}
 {{ $blogsPageFixCSS := resources.Get "css/blogs-page-fix.css" }}
+{{ $articlePageCSS := resources.Get "css/article-page.css" }}
+{{ $articlePageFixCSS := resources.Get "css/article-page-fix.css" }}
 
 {{ $styles = $styles | append $tailwindCSS }}
 {{ $styles = $styles | append $siteHeaderCSS }}
@@ -62,6 +64,8 @@
 {{ $styles = $styles | append $aboutPageCSS }}
 {{ $styles = $styles | append $blogsPageCSS }}
 {{ $styles = $styles | append $blogsPageFixCSS }}
+{{ $styles = $styles | append $articlePageCSS }}
+{{ $styles = $styles | append $articlePageFixCSS }}
 {{ $styles = $styles | resources.Concat "css/style.css" }}
 
 {{ $stylesLazy = $stylesLazy | resources.Concat "css/style-lazy.css" }}
