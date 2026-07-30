@@ -16,7 +16,8 @@
       {{- $currentMonth := "" -}}
       {{- $total := len $pages -}}
       {{- range $index, $item := $pages -}}
-        {{- $month := $item.Date.Format "2006 年 1 月" -}}
+        {{- $updateTime := $item.Lastmod -}}
+        {{- $month := $updateTime.Format "2006 年 1 月" -}}
         {{- if ne $month $currentMonth -}}
           {{- if ne $currentMonth "" -}}
               </div>
@@ -32,9 +33,9 @@
 
         <article class="library-article-row">
           <a class="library-article-link" href="{{ $item.RelPermalink }}">
-            <time class="library-date-block" datetime="{{ $item.Date.Format "2006-01-02" }}">
-              <span class="library-date-day">{{ $item.Date.Format "02" }}</span>
-              <span class="library-date-month">{{ $item.Date.Format "01 月" }}</span>
+            <time class="library-date-block" datetime="{{ $updateTime.Format "2006-01-02" }}">
+              <span class="library-date-day">{{ $updateTime.Format "02" }}</span>
+              <span class="library-date-month">{{ $updateTime.Format "01 月" }}</span>
             </time>
 
             <div class="library-article-main">
