@@ -1,7 +1,7 @@
 {{ define "main" }}
 {{ $excludedSections := slice "about" "guestbook" "blogs" }}
 {{ $recent := where site.RegularPages "Section" "not in" $excludedSections }}
-{{ $recent = $recent.ByLastmod.Reverse }}
+{{ $recent = partial "sort-pages-by-update" $recent }}
 <div class="home-redesign-page" data-home-redesign>
   <div class="home-container">
     <section class="home-hero" id="home-top" aria-labelledby="home-hero-title">
