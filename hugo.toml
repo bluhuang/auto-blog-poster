@@ -109,6 +109,10 @@ defaultContentLanguageInSubdir = false
   link = "css/home-redesign-tuning.css"
 [[params.plugins.css]]
   link = "css/home-redesign-v3.css"
+[[params.plugins.css]]
+  link = "css/home-guestbook-card-fix.css"
+[[params.plugins.css]]
+  link = "css/home-guestbook-interactions.css"
 
 # Article reading page styles (loaded last for highest specificity)
 [[params.plugins.css]]
@@ -147,6 +151,9 @@ defaultContentLanguageInSubdir = false
   lazy = true
 [[params.plugins.js]]
   link = "js/home-redesign.js"
+  lazy = true
+[[params.plugins.js]]
+  link = "js/home-guestbook-enhancements.js"
   lazy = true
 [[params.plugins.js]]
   link = "js/article-reading.js"
