@@ -1,52 +1,210 @@
-<div class="apple-card p-8 prose max-w-none mb-10">
-  <div class="flex flex-col items-center lg:flex-row lg:items-start gap-6 mb-6">
-    <img src="{{ site.Params.personal.avatar | default "images/avatar.jpg" | relURL }}" alt="Avatar" class="rounded-full w-32 h-32 object-cover shrink-0">
+<div class="about-redesign">
+  <section class="about-card about-hero">
     <div>
-      <h1 class="h3">Bluhuang's everything notebook</h1>
-      <p class="text-text-light">代码、咖啡因，与技术杂草丛</p>
+      <p class="about-eyebrow">About · Digital Garden</p>
+      <h1>Bluhuang's everything notebook</h1>
+      <p class="about-hero-subtitle">代码、咖啡因，与技术杂草丛</p>
+
+      <div class="about-hero-copy">
+        <p>欢迎来到我的数字"垃圾场"——不是贬义，是那种堆满了宝藏的杂物间。</p>
+        <p>学生时期时我喜欢 bullet journaling，会把日记、待办、头脑风暴、数学草稿全塞进一本横线本，大概填满了6本。</p>
+        <p>现在，我把这个习惯搬到了网上。</p>
+      </div>
     </div>
-  </div>
 
-  <p>欢迎来到我的数字"垃圾场"——不是贬义，是那种堆满了宝藏的杂物间。</p>
-  <p>学生时期时我喜欢 bullet journaling，会把日记、待办、头脑风暴、数学草稿全塞进一本横线本，大概填满了6本。</p>
-  <p>现在，我把这个习惯搬到了网上。</p>
+    <div class="about-avatar-wrap">
+      <img
+        class="about-avatar"
+        src="{{ site.Params.personal.avatar | default "images/avatar.jpg" | relURL }}"
+        alt="BluHuang 的头像">
+    </div>
+  </section>
 
-  <h2>关于我</h2>
-  <p>我是一名<strong>AI工程师</strong>，曾在英国留学。在数据库内核的深海里泡了多年，专注于<strong>索引与性能优化</strong>。同时也在AI和Agent领域持续探索，从系统底层到算法上层保持贯通。</p>
+  <section class="about-section about-profile-grid">
+    <article class="about-card about-profile-copy">
+      <p class="about-eyebrow">About me</p>
+      <h2>关于我</h2>
+      <p>
+        我是一名<strong>AI工程师</strong>，曾在英国留学。在数据库内核的深海里泡了多年，
+        专注于<strong>索引与性能优化</strong>。同时也在AI和Agent领域持续探索，
+        从系统底层到算法上层保持贯通。
+      </p>
+    </article>
 
-  <h2>这个数字花园会有什么？</h2>
-  <ul>
-    <li>技术学习的真实记录</li>
-    <li>项目实践中的心得与复盘</li>
-    <li>工具链与工作流的分享</li>
-  </ul>
+    <aside class="about-card about-facts">
+      <h3>当前关注</h3>
+      <div class="about-fact-list">
+        <div class="about-fact-row">
+          <span class="about-fact-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M17 9h4M3 15h4M17 15h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span>AI 工程与 Agent</span>
+        </div>
+        <div class="about-fact-row">
+          <span class="about-fact-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <ellipse cx="12" cy="6" rx="7" ry="3" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <span>数据库内核与性能优化</span>
+        </div>
+        <div class="about-fact-row">
+          <span class="about-fact-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 18 12 5l7 13H5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span>系统底层到算法上层</span>
+        </div>
+      </div>
+    </aside>
+  </section>
 
-  <h2>汪汪队镇园</h2>
-  <p><img src="{{ "images/dog-inline.jpg" | relURL }}" alt="汪汪队" class="max-w-full h-auto rounded-lg shadow-md"></p>
-  <p>（汪汪队表示：这个花园很安全）</p>
+  <section class="about-section">
+    <div class="about-section-heading">
+      <p class="about-eyebrow">What grows here</p>
+      <h2>这个数字花园会有什么？</h2>
+    </div>
 
-  <h2>我需要朋友（真的）</h2>
-  <p>认识有趣的人有助于个人成长（官方说法）。<br>如果你觉得聊技术、聊转行、聊"为什么这个embedding不work"挺好玩的，欢迎来戳我。</p>
-  <ul>
-    <li><strong>GitHub</strong>：<a href="https://github.com/bluhuang" target="_blank" rel="noopener">https://github.com/bluhuang</a></li>
-    <li><strong>Guestbook</strong>：在博客留言板给我留个言</li>
-  </ul>
+    <div class="about-garden-grid">
+      <article class="about-card about-garden-card">
+        <span class="about-garden-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 4.5h9.5A2.5 2.5 0 0 1 18 7v12.5H8.5A2.5 2.5 0 0 1 6 17V4.5Z" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M9 8h6M9 11h6M9 14h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <h3>技术学习的真实记录</h3>
+        <p>保留理解过程、卡点与推导，不只记录最后结论。</p>
+      </article>
 
-  <hr>
+      <article class="about-card about-garden-card">
+        <span class="about-garden-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 18.5 9.5 14l3 3 6.5-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 10h4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <h3>项目实践中的心得与复盘</h3>
+        <p>记录做过什么、为什么这样做，以及下一次如何做得更好。</p>
+      </article>
 
-  <h2>关于这个站 & 自动化彩蛋</h2>
-  <p>这个博客是全自动生成的——我写了一套<strong>自动化博客发布工具</strong>，名叫 <a href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener"><code>auto-blog-poster</code></a>。</p>
-  <p>它的工作流程：</p>
-  <ul>
-    <li>监听我们的 <strong>Obsidian 笔记仓库</strong>，一旦推送，自动触发。</li>
-    <li>调用 <strong>DeepSeek API</strong> 自动对笔记进行<strong>AI润色</strong>，让文字更流畅、表达更清晰。</li>
-    <li>处理 Obsidian 的特殊语法（如 <code>![[图片.png]]</code> 自动复制并转链）。</li>
-    <li>增量更新：只处理新增或修改的笔记，通过哈希缓存避免重复处理。</li>
-    <li>最后调用 <strong>Hugo</strong> 生成静态博客，并部署到 <strong>GitHub Pages</strong>。</li>
-  </ul>
-  <p><strong>效果</strong>：我只需要在 Obsidian 里写笔记，推送后几分钟，博客就自动更新了。<br>支持分类卡片、树形导航、搜索、评论、数学公式。</p>
-  <p>想玩的话，项目源码在这里：<a href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener">auto-blog-poster</a><br>
-  博客示例：<a href="https://bluhuang.github.io/blogs-of-bluhuang/" target="_blank" rel="noopener">bluhuang.github.io/blogs-of-bluhuang/</a></p>
-  <p>整个站由 <strong>Hugo + Hugoplate 主题</strong> 构建，没有使用任何分析工具——我不会卖你的数据，因为我连自己的数据都懒得整理。</p>
-  <p><strong>所有内容都是 work in progress</strong>。<br>如果迷路了，可以试试顶部的 <strong>Blogs</strong> 树形导航，或 <strong>搜索</strong> 功能。</p>
+      <article class="about-card about-garden-card">
+        <span class="about-garden-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 7h14M8 12h8M10 17h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+            <circle cx="17" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="17" r="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <h3>工具链与工作流的分享</h3>
+        <p>把零散工具组合成稳定、可复用的个人工作系统。</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="about-section about-card about-dog-card">
+    <img
+      class="about-dog-image"
+      src="{{ "images/dog-inline.jpg" | relURL }}"
+      alt="汪汪队">
+    <div class="about-dog-copy">
+      <p class="about-eyebrow">Garden keeper</p>
+      <h2>汪汪队镇园</h2>
+      <p>这个数字花园由汪汪队负责日常安全检查。</p>
+      <span class="about-dog-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m7 12 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        汪汪队表示：这个花园很安全
+      </span>
+    </div>
+  </section>
+
+  <section class="about-section about-card about-friend-card">
+    <div>
+      <p class="about-eyebrow">Say hello</p>
+      <h2>我需要朋友（真的）</h2>
+      <p>
+        认识有趣的人有助于个人成长（官方说法）。如果你觉得聊技术、聊转行、
+        聊"为什么这个embedding不work"挺好玩的，欢迎来戳我。
+      </p>
+    </div>
+
+    <div class="about-actions">
+      <a class="about-button" href="https://github.com/bluhuang" target="_blank" rel="noopener">
+        GitHub
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a class="about-button about-button-primary" href="{{ "guestbook/" | relURL }}">
+        去留言板
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <section class="about-section about-card about-automation">
+    <div class="about-automation-intro">
+      <div>
+        <p class="about-eyebrow">Automation story</p>
+        <h2>关于这个站<br>与自动化彩蛋</h2>
+      </div>
+
+      <p>
+        这个博客是全自动生成的——我写了一套<strong>自动化博客发布工具</strong>，
+        名叫 <strong>auto-blog-poster</strong>。我只需要在 Obsidian 里写笔记，
+        推送后几分钟，博客就自动更新了。
+      </p>
+    </div>
+
+    <div class="about-pipeline" aria-label="自动化博客发布流程">
+      <article class="about-step">
+        <span class="about-step-number">01</span>
+        <h3>监听 Obsidian</h3>
+        <p>笔记仓库一旦推送，自动触发流水线。</p>
+      </article>
+      <article class="about-step">
+        <span class="about-step-number">02</span>
+        <h3>AI 润色</h3>
+        <p>调用 DeepSeek API 优化文字表达。</p>
+      </article>
+      <article class="about-step">
+        <span class="about-step-number">03</span>
+        <h3>处理特殊语法</h3>
+        <p>转换 Obsidian 图片和链接语法。</p>
+      </article>
+      <article class="about-step">
+        <span class="about-step-number">04</span>
+        <h3>增量更新</h3>
+        <p>只处理新增或修改的笔记，避免重复。</p>
+      </article>
+      <article class="about-step">
+        <span class="about-step-number">05</span>
+        <h3>构建并部署</h3>
+        <p>生成静态站点并发布到 GitHub Pages。</p>
+      </article>
+    </div>
+
+    <div class="about-automation-result">
+      <p>
+        支持分类卡片、树形导航、搜索、评论和数学公式。
+        项目源码与博客示例都保持公开可访问。
+      </p>
+      <a class="about-button about-button-primary" href="https://github.com/bluhuang/auto-blog-poster" target="_blank" rel="noopener">
+        查看项目源码
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </section>
 </div>
