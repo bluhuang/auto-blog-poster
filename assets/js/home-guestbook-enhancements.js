@@ -8,21 +8,16 @@
   var composerFrame = null;
   var composerCommentCount = null;
   var successTimer = null;
-  var interactionFrame = null;
-  var interactionLoaded = false;
+  var moveRetryTimer = null;
+  var frameInInteraction = false;
   var lastFocus = null;
 
   var CONFIG = {
-    repo: "bluhuang/blogs-of-bluhuang",
-    repoId: "R_kgDOStnEPg",
-    category: "Announcements",
-    categoryId: "DIC_kwDOStnEPs4C-eIQ",
-    term: "blogs-of-bluhuang/guestbook/",
     discussionUrl: "https://github.com/bluhuang/blogs-of-bluhuang/discussions/2",
-    composerLight: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-light-v2.css?v=20260730-1",
-    composerDark: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-dark-v2.css?v=20260730-1",
-    interactionLight: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-interaction-light.css?v=20260730-1",
-    interactionDark: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-interaction-dark.css?v=20260730-1"
+    composerLight: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-light-v2.css?v=20260730-2",
+    composerDark: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-dark-v2.css?v=20260730-2",
+    interactionLight: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-interaction-light.css?v=20260730-2",
+    interactionDark: "https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-interaction-dark.css?v=20260730-2"
   };
 
   function isDark() {
@@ -43,14 +38,6 @@
       { giscus: { setConfig: { theme: theme } } },
       "https://giscus.app"
     );
-  }
-
-  function findComposerFrame() {
-    composerHost = root.querySelector("[data-giscus-compose]") || composerHost;
-    if (!composerHost) return null;
-    composerFrame = composerHost.querySelector("iframe.giscus-frame") || composerFrame;
-    if (composerFrame) postTheme(composerFrame, composerTheme());
-    return composerFrame;
   }
 
   function createSuccessToast() {
@@ -109,8 +96,8 @@
           '</div>' +
         '</header>' +
         '<div class="home-guestbook-interaction-body">' +
-          '<div class="home-guestbook-interaction-loading">正在连接 GitHub Discussions…</div>' +
-          '<div class="giscus home-guestbook-interaction-host"></div>' +
+          '<div class="home-guestbook-interaction-loading">正在打开真实互动区…</div>' +
+          '<div class="home-guestbook-interaction-host" data-giscus-interaction-host></div>' +
         '</div>' +
       '</section>';
     document.body.appendChild(modal);
@@ -120,51 +107,64 @@
   }
 
   var interactionModal = createInteractionModal();
-  var interactionHost = interactionModal.querySelector(".home-guestbook-interaction-host");
+  var interactionHost = interactionModal.querySelector("[data-giscus-interaction-host]");
   var interactionLoading = interactionModal.querySelector(".home-guestbook-interaction-loading");
   var interactionNative = interactionModal.querySelector(".home-guestbook-interaction-native");
   var interactionTitle = interactionModal.querySelector("#home-guestbook-interaction-title");
 
-  function loadInteractionGiscus() {
-    if (interactionLoaded) return;
-    interactionLoaded = true;
+  function locateFrame() {
+    composerHost = root.querySelector("[data-giscus-compose]") || composerHost;
+    composerFrame =
+      (composerHost && composerHost.querySelector("iframe.giscus-frame")) ||
+      interactionHost.querySelector("iframe.giscus-frame") ||
+      composerFrame;
+    return composerFrame;
+  }
 
-    var script = document.createElement("script");
-    script.src = "https://giscus.app/client.js";
-    script.setAttribute("data-repo", CONFIG.repo);
-    script.setAttribute("data-repo-id", CONFIG.repoId);
-    script.setAttribute("data-category", CONFIG.category);
-    script.setAttribute("data-category-id", CONFIG.categoryId);
-    script.setAttribute("data-mapping", "specific");
-    script.setAttribute("data-term", CONFIG.term);
-    script.setAttribute("data-strict", "1");
-    script.setAttribute("data-reactions-enabled", "1");
-    script.setAttribute("data-emit-metadata", "1");
-    script.setAttribute("data-input-position", "bottom");
-    script.setAttribute("data-theme", interactionTheme());
-    script.setAttribute("data-lang", "zh-CN");
-    script.setAttribute("crossorigin", "anonymous");
-    script.async = true;
-    interactionHost.appendChild(script);
+  function syncFrameTheme() {
+    var frame = locateFrame();
+    if (!frame) return;
+    postTheme(frame, frameInInteraction ? interactionTheme() : composerTheme());
+  }
 
-    new MutationObserver(function () {
-      interactionFrame = interactionHost.querySelector("iframe.giscus-frame") || interactionFrame;
-      if (!interactionFrame) return;
-      interactionLoading.hidden = true;
-      postTheme(interactionFrame, interactionTheme());
-    }).observe(interactionHost, { childList: true, subtree: true });
+  function moveFrameIntoInteraction(attempt) {
+    window.clearTimeout(moveRetryTimer);
+    var frame = locateFrame();
+    if (!frame) {
+      if ((attempt || 0) < 30 && interactionModal.classList.contains("is-open")) {
+        moveRetryTimer = window.setTimeout(function () {
+          moveFrameIntoInteraction((attempt || 0) + 1);
+        }, 100);
+      }
+      return;
+    }
+
+    if (frame.parentNode !== interactionHost) interactionHost.appendChild(frame);
+    frameInInteraction = true;
+    interactionLoading.hidden = true;
+    postTheme(frame, interactionTheme());
+  }
+
+  function restoreFrameToComposer() {
+    window.clearTimeout(moveRetryTimer);
+    var frame = locateFrame();
+    if (!frame || !composerHost) return;
+    if (frame.parentNode !== composerHost) composerHost.appendChild(frame);
+    frameInInteraction = false;
+    postTheme(frame, composerTheme());
   }
 
   function openInteraction(url, mode, trigger) {
     lastFocus = trigger || document.activeElement;
     interactionTitle.textContent = mode === "reaction" ? "点赞与添加表情" : "表情与回复";
     interactionNative.href = url || CONFIG.discussionUrl;
+    interactionLoading.hidden = false;
     interactionModal.hidden = false;
     interactionModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("home-guestbook-interaction-open");
-    loadInteractionGiscus();
     window.requestAnimationFrame(function () {
       interactionModal.classList.add("is-open");
+      moveFrameIntoInteraction(0);
       interactionModal.querySelector(".home-guestbook-interaction-close").focus();
     });
   }
@@ -173,6 +173,7 @@
     interactionModal.classList.remove("is-open");
     interactionModal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("home-guestbook-interaction-open");
+    restoreFrameToComposer();
     window.setTimeout(function () {
       if (!interactionModal.classList.contains("is-open")) interactionModal.hidden = true;
     }, 190);
@@ -194,10 +195,8 @@
   window.addEventListener("message", function (event) {
     if (event.origin !== "https://giscus.app") return;
     var payload = event.data && event.data.giscus;
-    if (!payload) return;
-
-    var frame = findComposerFrame();
-    if (!frame || event.source !== frame.contentWindow || !payload.discussion) return;
+    var frame = locateFrame();
+    if (!payload || !frame || event.source !== frame.contentWindow || !payload.discussion) return;
 
     var count = Number(payload.discussion.totalCommentCount);
     if (!Number.isFinite(count)) return;
@@ -216,13 +215,14 @@
   });
 
   new MutationObserver(function () {
-    findComposerFrame();
+    locateFrame();
+    if (!frameInInteraction) syncFrameTheme();
   }).observe(root, { childList: true, subtree: true });
 
-  new MutationObserver(function () {
-    postTheme(findComposerFrame(), composerTheme());
-    postTheme(interactionFrame, interactionTheme());
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(syncFrameTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
 
-  findComposerFrame();
+  locateFrame();
 })();
