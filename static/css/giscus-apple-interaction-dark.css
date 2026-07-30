@@ -1,0 +1,84 @@
+/*! Apple-style full Giscus interaction theme — dark. */
+@import url("https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-dark-v2.css?v=20260730-1");
+
+.gsc-comments > .gsc-header,
+.gsc-comments > .gsc-timeline,
+.gsc-reactions {
+  display: flex !important;
+}
+
+.gsc-comments > .gsc-comment-box {
+  display: none !important;
+}
+
+.gsc-main { gap: 16px !important; }
+.gsc-comments { gap: 14px !important; }
+.gsc-header {
+  align-items: center !important;
+  padding: 0 2px !important;
+  color: #aeaeb2 !important;
+}
+.gsc-comments-count { color: #f5f5f7 !important; font-size: 14px !important; }
+.gsc-timeline { gap: 12px !important; }
+.gsc-comment { font-size: 14px !important; }
+.gsc-comment > div:last-child {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, .10) !important;
+  border-radius: 18px !important;
+  background: rgba(28, 28, 30, .96) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .28) !important;
+}
+.gsc-comment-header { padding: 12px 14px 0 !important; }
+.gsc-comment-content { padding: 12px 14px !important; }
+.gsc-comment-footer,
+.gsc-reply-footer {
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 14px 12px !important;
+}
+.gsc-replies {
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(255, 255, 255, .08) !important;
+  background: rgba(44, 44, 46, .72) !important;
+}
+.gsc-comment-box-is-reply {
+  margin: 10px 12px 12px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(255, 255, 255, .10) !important;
+  border-radius: 16px !important;
+  background: #1c1c1e !important;
+}
+.gsc-comment-box-is-reply .gsc-comment-box-textarea { min-height: 118px !important; }
+.gsc-comment-box-is-reply .gsc-comment-box-preview { min-height: 159px !important; }
+.gsc-social-reaction-summary-item,
+.gsc-reactions-button,
+.gsc-upvote-button {
+  min-height: 30px !important;
+  border-radius: 999px !important;
+  border-color: rgba(255, 255, 255, .10) !important;
+  background: #2c2c2e !important;
+  color: #aeaeb2 !important;
+}
+.gsc-social-reaction-summary-item:hover,
+.gsc-reactions-button:hover,
+.gsc-upvote-button:hover {
+  color: #0a84ff !important;
+  background: rgba(10, 132, 255, .14) !important;
+}
+.gsc-social-reaction-summary-item.has-reacted {
+  color: #0a84ff !important;
+  border-color: rgba(10, 132, 255, .32) !important;
+  background: rgba(10, 132, 255, .16) !important;
+}
+.gsc-reactions {
+  padding: 14px !important;
+  border: 1px solid rgba(255, 255, 255, .10) !important;
+  border-radius: 18px !important;
+  background: rgba(28, 28, 30, .94) !important;
+}
+.gsc-pagination-button {
+  border-radius: 999px !important;
+  border-color: rgba(255, 255, 255, .10) !important;
+  background: #2c2c2e !important;
+}
