@@ -1,0 +1,17 @@
+/*! Apple-style Giscus composer v2 — dark. */
+@import url("https://bluhuang.github.io/blogs-of-bluhuang/css/giscus-apple-composer-dark.css?v=20260729-1");
+
+/* Remove the external Markdown guide row while preserving the real editor. */
+.gsc-comment-box-textarea-extras {
+  display: none !important;
+}
+
+.gsc-comment-box-textarea {
+  min-height: 232px !important;
+}
+
+@media (max-width: 520px) {
+  .gsc-comment-box-textarea {
+    min-height: 219px !important;
+  }
+}
