@@ -1,89 +1,148 @@
 {{ define "main" }}
   {{ $hasToc := and .TableOfContents (gt (len (findRE "<li>" .TableOfContents)) 0) }}
-  <article class="article-page">
+  {{ $categories := .Params.categories }}
+  <article class="article-page article-page-redesign">
+    <div class="article-reading-progress" aria-hidden="true"><span id="article-reading-progress-bar"></span></div>
+
     <div class="article-reading-layout">
       <header class="article-header">
-        <h1 class="article-title">{{ .Title }}</h1>
+        <div>
+          <div class="article-kicker">
+            <a href="{{ "blogs/" | relURL }}">博客</a>
+            {{ if $categories }}
+              {{ range $categories }}
+                <span class="article-kicker-separator" aria-hidden="true">›</span>
+                <a href="{{ `categories/` | relLangURL }}{{ . | urlize | lower }}/">{{ . | humanize }}</a>
+              {{ end }}
+            {{ end }}
+          </div>
+          <h1 class="article-title">{{ .Title }}</h1>
+        </div>
+
         <div class="article-meta">
           {{ with .Params.author }}
-            <span class="article-meta-item">
-              <a href="{{ "about/" | relURL }}">{{ . }}</a>
-            </span>
-          {{ end }}
-          {{ $categories:= .Params.categories }}
-          {{ if $categories }}
-            <span class="article-meta-sep">/</span>
-            <span class="article-meta-item">
-              {{ range $i,$p:= $categories }}
-                <a href="{{ `categories/` | relLangURL }}{{ . | urlize | lower }}/">
-                  {{ . | humanize }}{{ if ne $i (sub (len $categories) 1) }},{{ end }}
-                </a>
-              {{ end }}
-            </span>
+            <span class="article-meta-item"><a href="{{ "about/" | relURL }}">{{ . }}</a></span>
           {{ end }}
           {{ with .PublishDate }}
-            <span class="article-meta-sep">/</span>
-            <span class="article-meta-item">
-              {{ time.Format ":date_long" . }}
-            </span>
+            <span class="article-meta-item">{{ time.Format ":date_long" . }}</span>
           {{ end }}
+          <span class="article-meta-item article-reading-time" id="article-reading-time">计算中</span>
+          <span class="article-meta-item" id="article-word-count">统计中</span>
         </div>
       </header>
 
-      <div class="article-divider"></div>
-
-      <div class="article-content">
-        {{ .Content }}
+      <div class="article-content-card">
+        <div class="article-content" id="article-content">
+          {{ .Content }}
+        </div>
       </div>
 
-      {{ $tags:= .Params.tags }}
+      {{ $tags := .Params.tags }}
       {{ if $tags }}
         <div class="article-tags">
           <h5 class="article-tags-title">{{ T "tags" | default "Tags" }}:</h5>
           <ul>
-            {{ range $i,$p:= $tags }}
-              <li class="inline-block">
-                <a href="{{ `tags/` | relLangURL }}{{ . | urlize | lower }}/">
-                  {{ . | humanize }}
-                </a>
-              </li>
+            {{ range $tags }}
+              <li class="inline-block"><a href="{{ `tags/` | relLangURL }}{{ . | urlize | lower }}/">{{ . | humanize }}</a></li>
             {{ end }}
           </ul>
         </div>
       {{ end }}
 
-      {{ partial "giscus" . }}
+      <section class="article-comments" aria-labelledby="article-comments-title">
+        <p class="article-comments-label">DISCUSSION</p>
+        <h2 id="article-comments-title">评论与讨论</h2>
+        {{ partial "giscus" . }}
+      </section>
     </div>
 
-    <aside class="article-toc" id="article-toc-container">
-      <div class="article-toc-header">目录</div>
-      <nav class="article-toc-nav" id="article-toc-nav"></nav>
-    </aside>
+    {{ if $hasToc }}
+      <aside class="article-toc" id="article-toc-container" aria-label="文章目录">
+        <div class="article-toc-header"><span>目录</span><span class="article-toc-percent" id="article-toc-percent">0%</span></div>
+        <div class="article-toc-progress-track" aria-hidden="true"><span class="article-toc-progress-bar" id="article-toc-progress-bar"></span></div>
+        <nav class="article-toc-nav" id="article-toc-nav"></nav>
+      </aside>
 
-    <button class="article-toc-trigger" id="article-toc-trigger" aria-label="目录"></button>
-
-    <aside class="article-toc-drawer" id="article-toc-drawer" aria-hidden="true">
-      <div class="article-toc-drawer-header">
+      <button class="article-toc-trigger" id="article-toc-trigger" type="button" aria-label="打开文章目录">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+          <circle cx="4" cy="6" r="1" fill="currentColor" />
+          <circle cx="4" cy="12" r="1" fill="currentColor" />
+          <circle cx="4" cy="18" r="1" fill="currentColor" />
+        </svg>
         <span>目录</span>
-        <button class="article-toc-drawer-close" id="article-toc-drawer-close" aria-label="关闭">&times;</button>
-      </div>
-      <nav class="article-toc-drawer-nav" id="article-toc-drawer-nav"></nav>
-    </aside>
-    <div class="article-toc-overlay" id="article-toc-overlay" aria-hidden="true"></div>
+      </button>
+
+      <aside class="article-toc-drawer" id="article-toc-drawer" aria-hidden="true">
+        <div class="article-toc-drawer-header">
+          <span>文章目录</span>
+          <button class="article-toc-drawer-close" id="article-toc-drawer-close" aria-label="关闭">&times;</button>
+        </div>
+        <nav class="article-toc-drawer-nav" id="article-toc-drawer-nav"></nav>
+      </aside>
+      <div class="article-toc-overlay" id="article-toc-overlay" aria-hidden="true"></div>
+    {{ end }}
   </article>
 
   {{ $related := .Site.RegularPages.Related . | first 10 }}
   {{ $related = $related | shuffle | first 3 }}
   {{ with $related }}
-    <div class="section pb-0">
-      <h2 class="h3 mb-12" style="text-align:center">{{ T "related_posts" | default "Related Posts" }}</h2>
-      <div class="row justify-center">
+    <section class="article-related-redesign" aria-labelledby="article-related-title">
+      <p class="article-related-label">KEEP READING</p>
+      <h2 id="article-related-title">继续阅读</h2>
+      <div class="article-related-grid">
         {{ range . }}
-          <div class="lg:col-4 md:col-6 mb-14">
-            {{ partial "components/blog-card" . }}
-          </div>
+          <a class="article-related-card" href="{{ .RelPermalink }}">
+            <small>{{ with .CurrentSection }}{{ .Title }}{{ else }}文章{{ end }}</small>
+            <h3>{{ .Title }}</h3>
+            <p>{{ .Summary | plainify | truncate 130 }}</p>
+            {{ with .PublishDate }}<span>{{ time.Format ":date_long" . }}</span>{{ end }}
+          </a>
         {{ end }}
       </div>
-    </div>
+    </section>
   {{ end }}
+
+  <script>
+    (() => {
+      const article = document.getElementById("article-content");
+      const readingTime = document.getElementById("article-reading-time");
+      const wordCount = document.getElementById("article-word-count");
+      const pageProgress = document.getElementById("article-reading-progress-bar");
+      const tocProgress = document.getElementById("article-toc-progress-bar");
+      const tocPercent = document.getElementById("article-toc-percent");
+      if (!article || !readingTime || !wordCount) return;
+
+      const clone = article.cloneNode(true);
+      let codeCharacters = 0;
+      clone.querySelectorAll("pre").forEach((node) => {
+        codeCharacters += node.textContent.trim().length;
+        node.remove();
+      });
+
+      const text = clone.textContent.replace(/\s+/g, " ").trim();
+      const chineseCharacters = (text.match(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g) || []).length;
+      const englishText = text.replace(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, " ");
+      const englishWords = (englishText.match(/\b[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*\b/g) || []).length;
+      const minutes = Math.max(1, Math.ceil(chineseCharacters / 450 + englishWords / 230 + codeCharacters / 180));
+
+      readingTime.textContent = `约 ${minutes} 分钟`;
+      wordCount.textContent = `${chineseCharacters} 字 · ${englishWords} 词`;
+
+      const updateProgress = () => {
+        const articleTop = article.getBoundingClientRect().top + window.scrollY;
+        const articleHeight = article.offsetHeight;
+        const viewportAnchor = window.scrollY + window.innerHeight * 0.35;
+        const progress = Math.max(0, Math.min(1, (viewportAnchor - articleTop) / articleHeight));
+        const percentage = Math.round(progress * 100);
+        if (pageProgress) pageProgress.style.width = `${percentage}%`;
+        if (tocProgress) tocProgress.style.width = `${percentage}%`;
+        if (tocPercent) tocPercent.textContent = `${percentage}%`;
+      };
+
+      updateProgress();
+      window.addEventListener("scroll", updateProgress, { passive: true });
+      window.addEventListener("resize", updateProgress);
+    })();
+  </script>
 {{ end }}
