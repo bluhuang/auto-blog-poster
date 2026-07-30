@@ -13,7 +13,7 @@
   {{- $allPages = .RegularPagesRecursive -}}
 {{- end -}}
 
-{{- $allPages = sort $allPages "Date" "desc" -}}
+{{- $allPages = sort $allPages "Lastmod" "desc" -}}
 
 <div class="library-shell library-recent-redesign" data-library-root data-library-page="{{ .RelPermalink }}">
   <aside class="library-sidebar" aria-label="博客目录">
