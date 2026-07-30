@@ -7,6 +7,15 @@ from typing import Dict, List, Optional, Tuple
 
 
 PLACEHOLDER_RE = re.compile(r"@@PROTECTED_[A-F0-9]{12}_\d{4}@@")
+_MATRIX_ENVIRONMENTS = {
+    "matrix",
+    "bmatrix",
+    "pmatrix",
+    "vmatrix",
+    "Vmatrix",
+    "aligned",
+    "cases",
+}
 
 
 @dataclass(frozen=True)
@@ -130,7 +139,7 @@ def lint_math_content(content: str) -> List[Tuple[int, str]]:
     """Return actionable, conservative LaTeX lint findings.
 
     This intentionally detects only mechanical mistakes that make a formula
-    invalid or materially ambiguous.  It never changes mathematical meaning.
+    invalid or materially ambiguous. It never changes mathematical meaning.
     ``line`` is one-based and refers to the original Markdown source.
     """
     findings: List[Tuple[int, str]] = []
@@ -175,7 +184,7 @@ def lint_math_content(content: str) -> List[Tuple[int, str]]:
                     )
 
         # Definitions split across lines frequently lose their equality sign
-        # during editing.  Restrict this to clear function/operator/variable
+        # during editing. Restrict this to clear function/operator/variable
         # heads so ordinary standalone expressions are not rejected.
         first_index, first = nonempty[0]
         looks_like_head = bool(
@@ -195,8 +204,8 @@ def lint_math_content(content: str) -> List[Tuple[int, str]]:
 
 
 def validate_math_lint(content: str) -> None:
-    """Raise a line-numbered error when conservative math lint finds issues."""
-    findings = lint_math_content(content)
+    """Normalize safe mechanical issues, then reject remaining LaTeX errors."""
+    findings = lint_math_content(normalize_math_delimiters(content))
     if findings:
         details = "; ".join(
             f"line {line}: {message}" for line, message in findings[:20]
@@ -217,6 +226,42 @@ def normalize_math_delimiters(content: str) -> str:
         cursor = fence.end()
     chunks.append(_normalize_prose_math(content[cursor:]))
     return "".join(chunks)
+
+
+def _repair_matrix_row_separators(body: str) -> str:
+    """Repair only single trailing slashes inside known matrix environments."""
+    repaired: List[str] = []
+    active_environments: List[str] = []
+    begin_pattern = re.compile(r"\\begin\{([^}]+)\}")
+    end_pattern = re.compile(r"\\end\{([^}]+)\}")
+
+    for line in body.splitlines(keepends=True):
+        for match in begin_pattern.finditer(line):
+            if match.group(1) in _MATRIX_ENVIRONMENTS:
+                active_environments.append(match.group(1))
+
+        line_ending = ""
+        body_line = line
+        if body_line.endswith("\r\n"):
+            body_line, line_ending = body_line[:-2], "\r\n"
+        elif body_line.endswith("\n"):
+            body_line, line_ending = body_line[:-1], "\n"
+
+        if active_environments:
+            body_line = re.sub(
+                r"(?<!\\)\\([ \t]*)$",
+                lambda match: "\\\\" + match.group(1),
+                body_line,
+            )
+        repaired.append(body_line + line_ending)
+
+        for match in end_pattern.finditer(line):
+            environment = match.group(1)
+            if environment in active_environments:
+                reverse_index = active_environments[::-1].index(environment)
+                active_environments.pop(len(active_environments) - reverse_index - 1)
+
+    return "".join(repaired)
 
 
 def _normalize_prose_math(content: str) -> str:
@@ -242,6 +287,12 @@ def _normalize_prose_math(content: str) -> str:
             )
             content = content[:line_start] + normalized + content[line_end:]
 
+    # A display delimiter cannot be a meaningful Markdown heading by itself.
+    content = re.sub(
+        r"(?m)^[ \t]*#{1,6}[ \t]+(\$\$|\\\[)[ \t]*(?:  )?$",
+        lambda match: match.group(1),
+        content,
+    )
     content = re.sub(
         r"(?m)^[ \t]*(\$\$|\\\[|\\\])[ \t]*(?:  )?$",
         lambda match: match.group(1),
@@ -252,10 +303,11 @@ def _normalize_prose_math(content: str) -> str:
 
         def compact(match: re.Match) -> str:
             # Goldmark parses Markdown list/setext markers before it reaches
-            # a multi-line passthrough span.  Keep delimiter lines canonical
+            # a multi-line passthrough span. Keep delimiter lines canonical
             # but make the TeX body one physical line so leading ``+``, ``-``
             # or ``=`` tokens can never split a display equation into HTML.
-            inner = re.sub(r"\s*\n\s*", " ", match.group(2)).strip()
+            repaired = _repair_matrix_row_separators(match.group(2))
+            inner = re.sub(r"\s*\n\s*", " ", repaired).strip()
             return f"{match.group(1)}\n{inner}\n{match.group(3)}"
 
         content = pattern.sub(compact, content)
