@@ -1,0 +1,3 @@
+.article-page-redesign .article-comments .mt-16 { margin-top: 0 !important; }
+.article-page-redesign .article-comments .h4 { display: none; }
+.article-page-redesign .article-comments #giscus { min-height: 180px; }
