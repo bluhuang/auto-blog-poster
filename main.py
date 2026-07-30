@@ -14,6 +14,7 @@ from modules import (
     git_ops,
     guestbook_exporter,
     hugo_builder,
+    rename_migrator,
     site_validator,
 )
 
@@ -99,6 +100,19 @@ def main() -> None:
         cache_persister.pull_cache(config)
     except Exception as e:
         print(f"FATAL: Failed to restore cache: {e}")
+        sys.exit(1)
+
+    # Preserve generated output and LLM cache for source notes that only moved.
+    print()
+    print("[2b/7] Detecting cache-preserving note moves ...")
+    try:
+        rename_migrator.migrate_cache_preserving_renames(
+            source_root=str(notes_root),
+            config=config,
+            hash_cache_path=cache_file,
+        )
+    except Exception as e:
+        print(f"FATAL: Failed to migrate renamed-note cache: {e}")
         sys.exit(1)
 
     # ── Step 3: Process notes (incremental) ─────────────────────────

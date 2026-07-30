@@ -135,7 +135,7 @@ def _execute_code_blocks(
 
     for index, code in enumerate(code_blocks, start=1):
         compatible_code, replacements = _make_code_cross_platform(
-            code, source_root, config
+            code, source_path, source_root, config
         )
         if replacements:
             print(
@@ -192,8 +192,13 @@ def _extract_fenced_code(section: str, languages: List[str]) -> List[str]:
     return blocks
 
 
+def _normalize_note_stem(stem: str) -> str:
+    stem = re.sub(r"^\d+\s*[-.]?\s*", "", stem.casefold())
+    return re.sub(r"[^\w]+", "", stem, flags=re.UNICODE)
+
+
 def _make_code_cross_platform(
-    code: str, source_root: str, config: dict
+    code: str, source_path: str, source_root: str, config: dict
 ) -> Tuple[str, int]:
     if not config.get("processing", {}).get("code_execution", {}).get(
         "auto_map_windows_notes_root", True
@@ -211,6 +216,8 @@ def _make_code_cross_platform(
 
     tree = ast.parse(code)
     replacement_count = 0
+    current_note = Path(source_path).resolve()
+    current_stem = _normalize_note_stem(current_note.stem)
 
     class WindowsPathMapper(ast.NodeTransformer):
         def visit_Constant(self, node: ast.Constant) -> ast.AST:
@@ -225,8 +232,22 @@ def _make_code_cross_platform(
             marker_index = _find_subsequence(folded, marker_parts)
             if marker_index < 0:
                 return node
-            relative_parts = parts[marker_index + len(marker_parts):]
-            mapped = str(Path(source_root).joinpath(*relative_parts))
+
+            old_stem = _normalize_note_stem(windows_path.stem)
+            if (
+                windows_path.suffix.casefold() == ".md"
+                and old_stem
+                and current_stem
+                and (
+                    old_stem == current_stem
+                    or old_stem in current_stem
+                    or current_stem in old_stem
+                )
+            ):
+                mapped = str(current_note)
+            else:
+                relative_parts = parts[marker_index + len(marker_parts):]
+                mapped = str(Path(source_root).joinpath(*relative_parts))
             replacement_count += 1
             return ast.copy_location(ast.Constant(value=mapped), node)
 
