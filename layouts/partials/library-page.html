@@ -2,23 +2,20 @@
 {{- $excludedSections := slice "about" "guestbook" "blogs" "categories" "tags" -}}
 {{- $isLibraryRoot := eq .Section "blogs" -}}
 {{- $allPages := slice -}}
-{{- $folderSections := slice -}}
 
 {{- if $isLibraryRoot -}}
   {{- range site.Home.Sections.ByTitle -}}
     {{- if and (not (in $excludedSections .Section)) (gt (len .RegularPagesRecursive) 0) -}}
-      {{- $folderSections = $folderSections | append . -}}
       {{- $allPages = $allPages | append .RegularPagesRecursive -}}
     {{- end -}}
   {{- end -}}
 {{- else -}}
-  {{- $folderSections = .Sections -}}
   {{- $allPages = .RegularPagesRecursive -}}
 {{- end -}}
-{{- $allPages = sort $allPages "Date" "desc" -}}
-{{- $recentPages := first 12 $allPages -}}
 
-<div class="library-shell" data-library-root data-library-page="{{ .RelPermalink }}">
+{{- $allPages = sort $allPages "Date" "desc" -}}
+
+<div class="library-shell library-recent-redesign" data-library-root data-library-page="{{ .RelPermalink }}">
   <aside class="library-sidebar" aria-label="博客目录">
     {{ partial "library-sidebar" . }}
   </aside>
@@ -36,38 +33,22 @@
       {{ end }}
     </nav>
 
-    <div class="library-view" data-library-view="default">
-      <header class="library-page-heading">
+    <div class="library-view" data-library-view="recent">
+      <header class="library-recent-hero">
         <div>
-          <p class="library-page-kicker">{{ if $isLibraryRoot }}知识库{{ else }}文件夹{{ end }}</p>
-          <h1>{{ if $isLibraryRoot }}全部笔记{{ else }}{{ .Title }}{{ end }}</h1>
-          {{ if $isLibraryRoot }}
-            <p>按真实文件夹层级浏览内容，进入任意目录后仍保持同一套导航和文章列表。</p>
-          {{ else }}
-            {{ with .Description }}<p>{{ . }}</p>{{ end }}
-          {{ end }}
-        </div>
-        <span class="library-page-count">{{ len $allPages }} 篇文章</span>
-      </header>
-
-      {{ partial "library-folder-list" (dict "sections" $folderSections) }}
-      {{ if $isLibraryRoot }}
-        {{ partial "library-article-list" (dict "pages" $recentPages "title" "最近添加" "label" "最新 12 篇") }}
-      {{ else }}
-        {{ partial "library-article-list" (dict "pages" $allPages "title" "文章" "label" (printf "%d 篇" (len $allPages))) }}
-      {{ end }}
-    </div>
-
-    <div class="library-view" data-library-view="recent" hidden>
-      <header class="library-page-heading">
-        <div>
-          <p class="library-page-kicker">按时间浏览</p>
+          <p class="library-recent-kicker">
+            <span class="library-recent-status-dot" aria-hidden="true"></span>
+            {{ if $isLibraryRoot }}持续生长中的知识库{{ else }}{{ .Title }}{{ end }}
+          </p>
           <h1>最近更新</h1>
-          <p>{{ if $isLibraryRoot }}所有文件夹中的文章统一按更新时间倒序排列。{{ else }}当前文件夹及其子文件夹中的文章按更新时间倒序排列。{{ end }}</p>
         </div>
-        <span class="library-page-count">{{ len $allPages }} 篇更新</span>
+        <div class="library-recent-meta" aria-label="内容概览">
+          <span>{{ len $allPages }} 篇文章</span>
+          {{ if $isLibraryRoot }}<span>自动同步更新</span>{{ else }}<span>当前文件夹</span>{{ end }}
+        </div>
       </header>
-      {{ partial "library-article-list" (dict "pages" $allPages "title" "更新清单" "label" (printf "%d 篇" (len $allPages))) }}
+
+      {{ partial "library-article-list" (dict "pages" $allPages "title" "更新记录" "label" (printf "%d 篇" (len $allPages))) }}
     </div>
   </main>
 </div>
