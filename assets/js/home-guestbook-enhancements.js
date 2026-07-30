@@ -112,19 +112,28 @@
   var interactionNative = interactionModal.querySelector(".home-guestbook-interaction-native");
   var interactionTitle = interactionModal.querySelector("#home-guestbook-interaction-title");
 
+  function syncFrameTheme() {
+    if (!composerFrame) return;
+    postTheme(composerFrame, frameInInteraction ? interactionTheme() : composerTheme());
+  }
+
+  function bindFrameReady(frame) {
+    if (!frame || frame.dataset.homeGuestbookThemeBound === "1") return;
+    frame.dataset.homeGuestbookThemeBound = "1";
+    frame.addEventListener("load", syncFrameTheme);
+    window.setTimeout(syncFrameTheme, 120);
+    window.setTimeout(syncFrameTheme, 600);
+    window.setTimeout(syncFrameTheme, 1400);
+  }
+
   function locateFrame() {
     composerHost = root.querySelector("[data-giscus-compose]") || composerHost;
     composerFrame =
       (composerHost && composerHost.querySelector("iframe.giscus-frame")) ||
       interactionHost.querySelector("iframe.giscus-frame") ||
       composerFrame;
+    bindFrameReady(composerFrame);
     return composerFrame;
-  }
-
-  function syncFrameTheme() {
-    var frame = locateFrame();
-    if (!frame) return;
-    postTheme(frame, frameInInteraction ? interactionTheme() : composerTheme());
   }
 
   function moveFrameIntoInteraction(attempt) {
@@ -196,7 +205,8 @@
     if (event.origin !== "https://giscus.app") return;
     var payload = event.data && event.data.giscus;
     var frame = locateFrame();
-    if (!payload || !frame || event.source !== frame.contentWindow || !payload.discussion) return;
+    if (!payload || !frame || event.source !== frame.contentWindow) return;
+    if (!payload.discussion) return;
 
     var count = Number(payload.discussion.totalCommentCount);
     if (!Number.isFinite(count)) return;
