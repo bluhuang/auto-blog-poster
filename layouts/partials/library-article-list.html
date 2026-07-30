@@ -1,28 +1,61 @@
 {{- $pages := .pages -}}
-{{- $title := .title | default "文章" -}}
+{{- $title := .title | default "更新记录" -}}
 {{- $label := .label | default (printf "%d 篇" (len $pages)) -}}
-<section class="library-content-section">
+
+<section class="library-content-section library-recent-section">
   <div class="library-section-heading">
-    <h2>{{ $title }}</h2>
+    <div>
+      <h2>{{ $title }}</h2>
+      <p>最近修改的内容会自动出现在最前面。</p>
+    </div>
     {{ if $label }}<span>{{ $label }}</span>{{ end }}
   </div>
+
   {{ if gt (len $pages) 0 }}
-    <div class="library-article-collection">
-      {{ range $pages }}
+    <div class="library-recent-timeline">
+      {{- $currentMonth := "" -}}
+      {{- $total := len $pages -}}
+      {{- range $index, $item := $pages -}}
+        {{- $month := $item.Date.Format "2006 年 1 月" -}}
+        {{- if ne $month $currentMonth -}}
+          {{- if ne $currentMonth "" -}}
+              </div>
+            </section>
+          {{- end -}}
+          <section class="library-month-group">
+            <header class="library-month-heading">
+              <strong>{{ $month }}</strong>
+            </header>
+            <div class="library-article-collection">
+          {{- $currentMonth = $month -}}
+        {{- end -}}
+
         <article class="library-article-row">
-          <a class="library-article-link" href="{{ .RelPermalink }}">
+          <a class="library-article-link" href="{{ $item.RelPermalink }}">
+            <time class="library-date-block" datetime="{{ $item.Date.Format "2006-01-02" }}">
+              <span class="library-date-day">{{ $item.Date.Format "02" }}</span>
+              <span class="library-date-month">{{ $item.Date.Format "01 月" }}</span>
+            </time>
+
             <div class="library-article-main">
               <div class="library-article-meta">
-                <span class="library-article-path">{{ .CurrentSection.Title }}</span>
-                {{ with .Date }}<span class="library-meta-dot"></span><time datetime="{{ .Format "2006-01-02" }}">{{ .Format "2006-01-02" }}</time>{{ end }}
+                <span class="library-article-path">{{ $item.CurrentSection.Title }}</span>
               </div>
-              <h3 class="library-article-title">{{ .Title }}</h3>
-              {{ with .Summary }}<p class="library-article-summary">{{ . | plainify }}</p>{{ end }}
+              <h3 class="library-article-title">{{ $item.Title }}</h3>
+              {{ with $item.Summary }}<p class="library-article-summary">{{ . | plainify }}</p>{{ end }}
             </div>
-            <span class="library-row-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+
+            <span class="library-row-chevron" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
           </a>
         </article>
-      {{ end }}
+
+        {{- if eq (add $index 1) $total -}}
+            </div>
+          </section>
+        {{- end -}}
+      {{- end -}}
     </div>
   {{ else }}
     <div class="library-empty-state">
