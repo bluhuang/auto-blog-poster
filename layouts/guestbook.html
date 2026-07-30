@@ -1,11 +1,22 @@
 {{ define "main" }}
-<section class="section-sm">
-  <div class="container">
-    <div class="row justify-center">
-      <div class="md:col-8 lg:col-6">
-        <h1 class="h3 mb-8 text-center">{{ .Title }}</h1>
+<section class="guestbook-page-section">
+  <div class="container guestbook-page-container">
+    <div class="guestbook-redesign">
+      <header class="guestbook-hero">
+        <p class="guestbook-eyebrow">Guestbook</p>
+        <h1>留言板</h1>
+        {{ with .Description }}
+          <p class="guestbook-description">{{ . }}</p>
+        {{ end }}
+      </header>
+
+      <section class="guestbook-discussion-card" aria-labelledby="guestbook-discussion-title">
+        <div class="guestbook-discussion-heading">
+          <p class="guestbook-discussion-label">Discussion</p>
+          <h2 id="guestbook-discussion-title">留言与讨论</h2>
+        </div>
         {{ partial "giscus" . }}
-      </div>
+      </section>
     </div>
   </div>
 </section>
