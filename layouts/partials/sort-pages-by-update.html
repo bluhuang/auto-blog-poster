@@ -1,0 +1,15 @@
+{{- $sortable := slice -}}
+{{- range . -}}
+  {{- $sourcePath := .RelPermalink -}}
+  {{- with .File -}}
+    {{- $sourcePath = .Path -}}
+  {{- end -}}
+  {{- $sortKey := printf "%020d|%s" .Lastmod.Unix $sourcePath -}}
+  {{- $sortable = $sortable | append (dict "page" . "sortKey" $sortKey) -}}
+{{- end -}}
+{{- $sortable = sort $sortable "sortKey" "desc" -}}
+{{- $pages := slice -}}
+{{- range $sortable -}}
+  {{- $pages = $pages | append .page -}}
+{{- end -}}
+{{- return $pages -}}
