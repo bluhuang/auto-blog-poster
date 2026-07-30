@@ -115,16 +115,25 @@
 
       const clone = article.cloneNode(true);
       let codeCharacters = 0;
+      const proseBlockLanguages = new Set(["", "text", "test", "txt", "plaintext", "plain", "mermaid"]);
+
       clone.querySelectorAll("pre").forEach((node) => {
-        codeCharacters += node.textContent.trim().length;
+        const wrapperLanguage = node.closest("[data-language]")?.getAttribute("data-language") || "";
+        const codeLanguage = node.querySelector("code")?.getAttribute("data-lang") || "";
+        const classLanguage = Array.from(node.querySelector("code")?.classList || []).find((name) => name.startsWith("language-"))?.slice(9) || "";
+        const language = (wrapperLanguage || codeLanguage || classLanguage).toLowerCase();
+        const isMermaid = node.classList.contains("mermaid");
+        if (!isMermaid && !proseBlockLanguages.has(language)) codeCharacters += node.textContent.trim().length;
         node.remove();
       });
+
+      clone.querySelectorAll("script, style, template, noscript, svg, .katex, .mermaid, [aria-hidden='true']").forEach((node) => node.remove());
 
       const text = clone.textContent.replace(/\s+/g, " ").trim();
       const chineseCharacters = (text.match(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g) || []).length;
       const englishText = text.replace(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, " ");
       const englishWords = (englishText.match(/\b[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*\b/g) || []).length;
-      const minutes = Math.max(1, Math.ceil(chineseCharacters / 450 + englishWords / 230 + codeCharacters / 180));
+      const minutes = Math.max(1, Math.ceil(chineseCharacters / 450 + englishWords / 230 + codeCharacters / 360));
 
       readingTime.textContent = `约 ${minutes} 分钟`;
       wordCount.textContent = `${chineseCharacters} 字 · ${englishWords} 词`;
