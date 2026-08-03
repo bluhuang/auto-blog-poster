@@ -88,7 +88,7 @@ AI 脱敏润色 + Obsidian 内容转换
         ↓
 静态检查 + Playwright 浏览器检查
         ↓
-发布到 GitHub Pages并保存增量缓存
+发布到 GitHub Pages 并保存增量缓存
 ```
 
 ## 开始使用
