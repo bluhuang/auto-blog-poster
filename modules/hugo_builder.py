@@ -46,3 +46,13 @@ def build_site(config: dict) -> None:
         )
 
     print("Hugo build finished.")
+
+    # README screenshots are generated from the exact build artifact before
+    # validation and deployment. A preview failure should not block publishing.
+    try:
+        from modules import readme_preview
+
+        print("Capturing README previews ...")
+        readme_preview.capture_previews(config)
+    except Exception as exc:
+        print(f"WARNING: README preview capture failed: {exc}")
