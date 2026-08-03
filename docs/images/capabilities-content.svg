@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">从私人笔记到公开文章</title>
+  <desc id="desc">系统依次完成内容变化检测、AI 脱敏润色、Obsidian 内容转换和 Hugo 网站生成。</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.10"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8E8E93"/></marker>
+  </defs>
+  <rect width="1200" height="460" rx="32" fill="#F5F5F7"/>
+  <text x="64" y="72" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="30" font-weight="700" fill="#1D1D1F">从私人笔记到公开文章</text>
+  <text x="64" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="17" fill="#6E6E73">不是简单复制 Markdown，而是一条完整的内容公开化流水线</text>
+  <g filter="url(#shadow)">
+    <rect x="64" y="160" width="230" height="220" rx="24" fill="#FFFFFF"/>
+    <circle cx="112" cy="208" r="24" fill="#EAF3FF"/>
+    <path d="M102 208h20M112 198v20" stroke="#007AFF" stroke-width="3" stroke-linecap="round"/>
+    <text x="96" y="266" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="23" font-weight="700" fill="#1D1D1F">变化检测</text>
+    <text x="96" y="302" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">新增 · 修改 · 删除</text>
+    <text x="96" y="330" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">移动与重命名迁移</text>
+  </g>
+  <line x1="310" y1="270" x2="350" y2="270" stroke="#8E8E93" stroke-width="3" marker-end="url(#arrow)"/>
+  <g filter="url(#shadow)">
+    <rect x="370" y="160" width="230" height="220" rx="24" fill="#FFFFFF"/>
+    <circle cx="418" cy="208" r="24" fill="#F2ECFF"/>
+    <path d="M408 214c6-15 14-15 20 0M411 202h14" stroke="#8E44FF" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <text x="402" y="266" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="23" font-weight="700" fill="#1D1D1F">AI 公开化</text>
+    <text x="402" y="302" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">敏感信息脱敏</text>
+    <text x="402" y="330" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">润色与语境转换</text>
+  </g>
+  <line x1="616" y1="270" x2="656" y2="270" stroke="#8E8E93" stroke-width="3" marker-end="url(#arrow)"/>
+  <g filter="url(#shadow)">
+    <rect x="676" y="160" width="230" height="220" rx="24" fill="#FFFFFF"/>
+    <circle cx="724" cy="208" r="24" fill="#EAFBF1"/>
+    <path d="M713 215l8-14 7 10 5-7 6 11z" stroke="#28A745" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    <text x="708" y="266" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="23" font-weight="700" fill="#1D1D1F">内容转换</text>
+    <text x="708" y="302" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">图片 · 公式 · Mermaid</text>
+    <text x="708" y="330" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">代码与目录结构</text>
+  </g>
+  <line x1="922" y1="270" x2="962" y2="270" stroke="#8E8E93" stroke-width="3" marker-end="url(#arrow)"/>
+  <g filter="url(#shadow)">
+    <rect x="982" y="160" width="154" height="220" rx="24" fill="#FFFFFF"/>
+    <circle cx="1030" cy="208" r="24" fill="#FFF4E5"/>
+    <path d="M1019 199h22v18h-22zM1024 194h12" stroke="#FF9500" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    <text x="1014" y="266" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="23" font-weight="700" fill="#1D1D1F">Hugo</text>
+    <text x="1014" y="302" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">页面</text>
+    <text x="1014" y="330" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="16" fill="#6E6E73">导航 · 搜索</text>
+  </g>
+</svg>
