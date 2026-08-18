@@ -9,7 +9,8 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +49,7 @@ jobs:
 
       - name: Install validation browser
         run: playwright install --with-deps chromium
+        timeout-minutes: 10
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
