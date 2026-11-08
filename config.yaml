@@ -92,3 +92,5 @@ validation:
   public_dir: public
   browser_test_paths:
   - /ai/0-paper/cnn-net/4-mobilenetv2---inverted-residuals-and-linear-bottlenecks/
+  - /ai/5-cv/21-bayer-scaler/
+  - raw-image-denoising/

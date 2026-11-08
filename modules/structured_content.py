@@ -92,8 +92,8 @@ class StructuredContentProtector:
             ),
             # Display math before inline math.
             re.compile(r"(?s)\$\$.*?\$\$"),
-            re.compile(r"(?s)\\\[.*?\\\]"),
-            re.compile(r"(?s)\\\(.*?\\\)"),
+            re.compile(r"(?s)(?<!\\)\\\[.*?(?<!\\)\\\]"),
+            re.compile(r"(?s)(?<!\\)\\\(.*?(?<!\\)\\\)"),
             # Single-dollar inline math (not escaped, not $$, no newline).
             re.compile(r"(?<!\\)(?<!\$)\$(?!\$)(?:\\.|[^$\n\\])+(?<!\\)\$(?!\$)"),
         ]
@@ -124,8 +124,8 @@ def validate_math_delimiters(content: str) -> None:
     if len(re.findall(r"(?<!\\)\$\$", without_fences)) % 2:
         errors.append("$$")
     for opening, closing, label in (
-        (r"\\\(", r"\\\)", r"\(...\)"),
-        (r"\\\[", r"\\\]", r"\[...\]"),
+        (r"(?<!\\)\\\(", r"(?<!\\)\\\)", r"\(...\)"),
+        (r"(?<!\\)\\\[", r"(?<!\\)\\\]", r"\[...\]"),
     ):
         if len(re.findall(opening, without_fences)) != len(
             re.findall(closing, without_fences)
@@ -152,7 +152,7 @@ def lint_math_content(content: str) -> List[Tuple[int, str]]:
             if masked[index] != "\n":
                 masked[index] = " "
     prose = "".join(masked)
-    block_pattern = re.compile(r"(?s)(?:\$\$(.*?)\$\$|\\\[(.*?)\\\])")
+    block_pattern = re.compile(r"(?s)(?:\$\$(.*?)\$\$|(?<!\\)\\\[(.*?)(?<!\\)\\\])")
     for match in block_pattern.finditer(prose):
         body = match.group(1) if match.group(1) is not None else match.group(2)
         start_line = prose.count("\n", 0, match.start()) + 1
@@ -273,7 +273,7 @@ def _repair_matrix_row_separators(body: str) -> str:
 
 def _normalize_prose_math(content: str) -> str:
     """Normalize display math in prose, including Obsidian block quotes."""
-    display_pattern = re.compile(r"(?s)(\$\$|\\\[).*?(\$\$|\\\])")
+    display_pattern = re.compile(r"(?s)(\$\$|(?<!\\)\\\[).*?(\$\$|(?<!\\)\\\])")
 
     # Work backwards so replacing a complete line range cannot invalidate later
     # match offsets. A quoted display formula becomes a normal top-level block.
@@ -305,7 +305,10 @@ def _normalize_prose_math(content: str) -> str:
         lambda match: match.group(1),
         content,
     )
-    for opening, closing in ((r"\$\$", r"\$\$"), (r"\\\[", r"\\\]")):
+    for opening, closing in (
+        (r"\$\$", r"\$\$"),
+        (r"(?<!\\)\\\[", r"(?<!\\)\\\]"),
+    ):
         pattern = re.compile(rf"(?s)({opening})\n?(.*?)(?:\n)?({closing})")
 
         def compact(match: re.Match) -> str:

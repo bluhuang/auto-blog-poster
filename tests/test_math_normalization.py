@@ -1,9 +1,45 @@
 import unittest
 
-from modules.structured_content import normalize_math_delimiters, validate_math_lint
+from modules.structured_content import (
+    StructuredContentProtector,
+    normalize_math_delimiters,
+    validate_math_delimiters,
+    validate_math_lint,
+)
 
 
 class MathNormalizationTests(unittest.TestCase):
+    def test_aligned_row_spacing_is_not_a_display_delimiter(self) -> None:
+        for opening, closing in (("$$", "$$"), (r"\[", r"\]")):
+            with self.subTest(opening=opening):
+                source = opening + r"""
+\begin{aligned}
+\mathbb E[Z\mid I]&=\frac{I}{K}\\[4pt]
+\mathbb E[KZ\mid I]&=I
+\end{aligned}
+""" + closing
+                validate_math_delimiters(source)
+                normalized = normalize_math_delimiters(source)
+                validate_math_delimiters(normalized)
+                validate_math_lint(normalized)
+                self.assertIn(r"\\[4pt]", normalized)
+                protector = StructuredContentProtector(source)
+                self.assertEqual(protector.restore(protector.protect()), source)
+
+    def test_escaped_brackets_do_not_absorb_following_math(self) -> None:
+        source = r"Literal \\[ and \\( are not math delimiters." + "\n\n$$x=1$$\n"
+        validate_math_delimiters(source)
+        normalized = normalize_math_delimiters(source)
+        self.assertIn(r"Literal \\[ and \\(", normalized)
+        self.assertIn("$$\nx=1\n$$", normalized)
+        protector = StructuredContentProtector(source)
+        protector.protect()
+        self.assertEqual([item.original for item in protector.items], ["$$x=1$$"])
+
+    def test_real_unclosed_display_math_is_still_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, 'Unbalanced math delimiters'):
+            validate_math_delimiters(r"\[x=1")
+
     def test_repairs_single_matrix_row_separators_before_lint(self) -> None:
         source = r"""# $$
 \begin{bmatrix}

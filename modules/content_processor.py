@@ -27,7 +27,7 @@ from modules.structured_content import (
     validate_math_lint,
 )
 
-PROCESSING_VERSION = "section-actions-v6"
+PROCESSING_VERSION = "section-actions-v7"
 DEEPSEEK_CACHE_VERSION = "deepseek-v1"
 
 
@@ -530,10 +530,16 @@ def process_single_note(
             image_links
         ):
             dest_path = os.path.join(target_static_dir, target_rel)
-            if not os.path.isfile(dest_path):
+            is_remote = source_abs.startswith(("http://", "https://"))
+            needs_copy = not os.path.isfile(dest_path)
+            if not is_remote and not needs_copy:
+                # Restored cached assets can have the same filename as a
+                # newly generated figure. Compare bytes before reusing them.
+                needs_copy = compute_md5(source_abs) != compute_md5(dest_path)
+            if needs_copy:
                 os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
                 try:
-                    if source_abs.startswith("http://") or source_abs.startswith("https://"):
+                    if is_remote:
                         urllib.request.urlretrieve(source_abs, dest_path)
                         print(f"  [image] downloaded: {os.path.basename(dest_path)}")
                     else:
@@ -544,7 +550,7 @@ def process_single_note(
                         f"Image copy failed for {source_path}: {source_abs} ({e})"
                     ) from e
             else:
-                print(f"  [image] skipped (exists): {os.path.basename(source_abs)}")
+                print(f"  [image] skipped (cached): {os.path.basename(source_abs)}")
             replacements[original_syntax] = (
                 f"![](/{urllib.parse.quote(target_rel)})"
             )
