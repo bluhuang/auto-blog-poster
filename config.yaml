@@ -54,7 +54,7 @@ processing:
       fence_languages:
       - python
       - run-python
-      timeout_seconds: 120
+      timeout_seconds: 300
     - type: exclude_from_blog
   local_vault_path: /Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu
     obsidian
