@@ -38,6 +38,7 @@ static/vendor/katex/auto-render.min.js
 hugo_stats.json
 static/navigation.json
 static/private-space/
+screenshots/
 failed_notes.log
 .DS_Store
 *.log
