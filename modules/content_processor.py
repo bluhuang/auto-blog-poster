@@ -588,6 +588,10 @@ def process_single_note(
                 "key": deepseek_cache_key,
                 "response": cached_response,
             }
+    if cached_response is None and config.get("_without_deepseek", False):
+        cached_response = content_to_send
+        config.setdefault("_deepseek_bypassed_paths", set()).add(rel_path)
+        print("  DeepSeek bypass: publishing current content without AI editing")
     if cached_response is None and config.get("_deepseek_cache_only", False):
         raise RuntimeError(
             f"DeepSeek cache-only mode: cache miss for {rel_path}; refusing to call the API"
@@ -901,6 +905,10 @@ def process_all_notes(
     for rel_path in scan_md_files(source_root):
         abs_path = os.path.join(source_root, rel_path)
         new_cache[rel_path] = compute_processing_hash(abs_path)
+        if rel_path in config.get("_deepseek_bypassed_paths", set()):
+            # Revisit this note once normal AI processing is available again.
+            # Never treat raw passthrough content as a successful AI response.
+            new_cache[rel_path] += ":without-deepseek"
         mtime = get_local_file_time(config, rel_path)
         if mtime:
             mtimes[rel_path] = mtime

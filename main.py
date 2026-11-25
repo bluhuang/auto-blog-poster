@@ -28,12 +28,17 @@ def load_config(config_path: str = "config.yaml") -> dict:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build and publish the blog")
-    parser.add_argument(
+    deepseek_mode = parser.add_mutually_exclusive_group()
+    deepseek_mode.add_argument(
         "--skip-deepseek",
         "--deepseek-cache-only",
         dest="deepseek_cache_only",
         action="store_true",
         help="Use only an existing DeepSeek response cache; never call the API.",
+    )
+    deepseek_mode.add_argument(
+        "--without-deepseek", action="store_true",
+        help="Reuse exact cached responses; publish uncached notes without AI editing.",
     )
     parser.add_argument(
         "--no-deploy",
@@ -59,6 +64,9 @@ def main() -> None:
 
     args = _parse_args()
     config = load_config()
+    if args.without_deepseek:
+        config["_without_deepseek"] = True
+        print("DeepSeek mode: bypass API; uncached content is published without AI editing")
     if args.deepseek_cache_only:
         config["_deepseek_cache_only"] = True
         print("DeepSeek mode: cache-only (API calls forbidden)")
@@ -125,7 +133,7 @@ def main() -> None:
         def counted_deepseek_call(content: str, call_config: dict) -> str:
             nonlocal deepseek_calls
             deepseek_calls += 1
-            if call_config.get("_deepseek_cache_only", False):
+            if call_config.get("_deepseek_cache_only", False) or call_config.get("_without_deepseek", False):
                 raise AssertionError("DeepSeek API call attempted in cache-only mode")
             return deepseek_client.call_deepseek(content, call_config)
 
