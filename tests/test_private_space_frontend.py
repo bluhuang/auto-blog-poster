@@ -3,6 +3,11 @@ from pathlib import Path
 
 
 class PrivateSpaceFrontendTests(unittest.TestCase):
+    def test_shell_generation_uses_current_hugo_build_options(self):
+        generator = Path('modules/private_bundle.py').read_text()
+        self.assertIn('"build": {"list": "never", "render": "always"}', generator)
+        self.assertNotIn('"_build":', generator)
+
     def test_locked_shell_is_generic_and_sidebar_has_one_entry(self):
         shell = Path('layouts/_default/private-space.html').read_text()
         sidebar = Path('layouts/partials/library-sidebar.html').read_text()

@@ -351,7 +351,7 @@ def build_bundle(notes_root: Path, config: dict) -> None:
         "title": settings.get("title", "Private Space"), "layout": "private-space",
         "url": settings.get("url", "private-space/"),
         "params": {"private_space": True},
-        "_build": {"list": "never", "render": "always"},
+        "build": {"list": "never", "render": "always"},
         "outputs": ["HTML"], "sitemap": {"disable": True},
     }
     (content_root / "private-space.md").write_text(
