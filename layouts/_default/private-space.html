@@ -24,9 +24,9 @@
     <p>解锁后才能查看目录与笔记。关闭页面或手动锁定后，需要重新输入密码。</p>
     <form data-private-form>
       <label for="private-space-password">访问密码</label>
-      <div class="private-space-password-row"><input id="private-space-password" type="password" name="private-password" autocomplete="off" required aria-describedby="private-space-status"><button type="submit" data-private-submit>解锁</button></div>
+      <div class="private-space-password-row"><input id="private-space-password" type="password" autocomplete="off" required aria-describedby="private-space-status"><button type="submit" data-private-submit disabled>解锁</button></div>
     </form>
-    <p id="private-space-status" class="private-space-status" role="status" aria-live="polite" data-private-status></p>
+    <p id="private-space-status" class="private-space-status" role="status" aria-live="polite" data-private-status>正在准备安全解锁…</p>
     <noscript>请启用 JavaScript，以便在浏览器本地解密笔记。</noscript>
   </div>
   <div class="private-space-workspace" data-private-workspace hidden>

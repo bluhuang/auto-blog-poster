@@ -200,4 +200,9 @@
   lockButton.addEventListener("click", () => { reset(); password.focus(); });
   window.addEventListener("pagehide", reset);
   window.addEventListener("pageshow", event => { if (event.persisted) reset(); });
+  // Keep native form submission disabled until the local decrypt handler is
+  // installed. The input has no name, so it can never become a query parameter.
+  root.dataset.privateReady = "true";
+  status.textContent = "";
+  submit.disabled = false;
 })();

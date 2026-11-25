@@ -12,6 +12,8 @@ class PrivateSpaceFrontendTests(unittest.TestCase):
         shell = Path('layouts/_default/private-space.html').read_text()
         sidebar = Path('layouts/partials/library-sidebar.html').read_text()
         self.assertIn('type="password"', shell)
+        self.assertIn('data-private-submit disabled', shell)
+        self.assertNotIn('name="private-password"', shell)
         self.assertIn('data-private-workspace hidden', shell)
         self.assertIn('data-private-tree></nav>', shell)
         self.assertNotIn('private.source_dirs', shell)
@@ -37,6 +39,7 @@ class PrivateSpaceFrontendTests(unittest.TestCase):
         self.assertIn('window.renderMathInElement(content', script)
         self.assertIn('trust: false', script)
         self.assertIn('element.download = "attachment"', script)
+        self.assertIn('root.dataset.privateReady = "true"', script)
 
 
 if __name__ == '__main__':

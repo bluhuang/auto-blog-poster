@@ -18,7 +18,7 @@ const assert = require('assert/strict');
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(payload)), cipher.final(), cipher.getAuthTag()]);
   const bundle = {version:1,kdf:'PBKDF2-SHA256',iterations:600000,salt:salt.toString('base64'),iv:iv.toString('base64'),ciphertext:ciphertext.toString('base64')};
-  const shell = `<!doctype html><html><body><section data-private-space data-bundle-url="/bundle.json"><button data-private-lock hidden>Lock</button><div data-private-gate><form data-private-form><input type="password" required><button data-private-submit>Unlock</button></form><p data-private-status></p></div><div data-private-workspace hidden><nav data-private-tree></nav><h2 data-private-note-title tabindex="-1">Select a note</h2><div data-private-content></div></div></section><script src="/katex.min.js"></script><script src="/auto-render.min.js"></script><script src="/private-space.js"></script></body></html>`;
+  const shell = `<!doctype html><html><body><section data-private-space data-bundle-url="/bundle.json"><button data-private-lock hidden>Lock</button><div data-private-gate><form data-private-form><input type="password" required><button data-private-submit disabled>Unlock</button></form><p data-private-status>Preparing</p></div><div data-private-workspace hidden><nav data-private-tree></nav><h2 data-private-note-title tabindex="-1">Select a note</h2><div data-private-content></div></div></section><script src="/katex.min.js"></script><script src="/auto-render.min.js"></script><script src="/private-space.js"></script></body></html>`;
   const katexDist = path.join(__dirname, '../node_modules/katex/dist');
   const resources = {
     '/private-space.js':fs.readFileSync(path.join(__dirname,'../assets/js/private-space.js'),'utf8'),
@@ -41,6 +41,7 @@ const assert = require('assert/strict');
       });
       const page = await context.newPage();
       await page.goto('https://private.test/');
+      await page.locator('[data-private-ready="true"]').waitFor();
       assert.equal(await page.locator('[data-private-tree]').innerText(),'');
       assert.equal(await page.locator('[data-private-workspace]').isVisible(),false);
       assert.ok(!(await page.content()).includes('Confidential fixture note'));
