@@ -1,9 +1,13 @@
 import base64
 import json
+import html as html_module
+import hashlib
 import os
 from pathlib import Path
 import tempfile
+import re
 import unittest
+import yaml
 from unittest.mock import patch, MagicMock
 
 from cryptography.exceptions import InvalidTag
@@ -85,6 +89,9 @@ class PrivateBundleTests(unittest.TestCase):
         self.assertIn("list: never", shell)
         self.assertIn("private_space: true", shell)
         self.assertNotIn("Algorithm secret", shell)
+        metadata = yaml.safe_load(shell.split('---', 2)[1])
+        bundle_bytes = (self.root / 'static' / 'private-space' / 'bundle.json').read_bytes()
+        self.assertEqual(metadata['params']['private_bundle_revision'], hashlib.sha256(bundle_bytes).hexdigest())
         self.assertEqual(len(list((self.root / "static").rglob("*.*"))), 1)
 
     def test_wrong_password_and_tampering_fail_authentication(self):
@@ -130,7 +137,9 @@ class PrivateBundleTests(unittest.TestCase):
         )
         payload = decrypt(self.build())
         html = "\n".join(note["html"] for folder in payload["folders"] for note in folder["notes"])
-        self.assertIn("![[missing-example]]", html)
+        # Chroma adds spans around tokens; the visible code remains exact.
+        self.assertIn("![[missing-example]]", html_module.unescape(re.sub(r'<[^>]+>', '', html)))
+        self.assertIn('class="code-block code-block--python"', html)
         self.assertNotIn("<script", html)
         self.assertNotIn("onclick=", html)
         self.assertNotIn("javascript:", html)
@@ -153,8 +162,11 @@ class PrivateBundleTests(unittest.TestCase):
         text = payload["folders"][0]["notes"][0]["html"]
         self.assertIn('W_{x_y}', text)
         self.assertIn('\\begin{bmatrix}', text)
-        self.assertIn('$x_i * y_j &lt; z$', text)
-        self.assertIn('\\(a_b\\)', text)
+        self.assertIn('x_i * y_j &lt; z</annotation>', text)
+        self.assertIn('a_b</annotation>', text)
+        self.assertIn('class="katex"', text)
+        self.assertIn('<math ', text)
+        self.assertEqual(payload['renderer'], 'hugo')
         self.assertNotIn('<em>', text)
 
     def test_https_image_is_embedded_in_ciphertext_not_external_html(self):
@@ -187,6 +199,22 @@ class PrivateBundleTests(unittest.TestCase):
         payload = decrypt(self.build())
         asset = next(iter(payload['assets'].values()))
         self.assertEqual(base64.b64decode(asset['data']), b'parent asset')
+
+    def test_private_titles_and_duplicate_heading_follow_public_article_policy(self):
+        note = self.notes / 'coding' / 'Algorithm secret.md'
+        numbered = note.with_name('1 Algorithm secret.md')
+        note.rename(numbered)
+        numbered.write_text('# Algorithm secret\n\nBody without a duplicated article title.\n')
+        self.config['processing'] = {
+            'title_strip_prefix': {'enabled': True, 'pattern': r'^\d+\s*[-.]?\s*'},
+            'default_author': 'Article author',
+        }
+        payload = decrypt(self.build())
+        note = next(note for folder in payload['folders'] for note in folder['notes']
+                    if note['title'] == 'Algorithm secret')
+        self.assertEqual(note['author'], 'Article author')
+        self.assertNotIn('<h1', note['html'])
+        self.assertIn('Body without a duplicated article title.', note['html'])
 
 
 if __name__ == "__main__":

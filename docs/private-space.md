@@ -8,7 +8,10 @@ homepage, or plaintext processed cache. The library shows only a generic link.
 Set the Actions secret named by `private_space.password_env` (by default
 `PRIVATE_SPACE_PASSWORD`). Never commit the password. A missing password or
 unresolved private reference stops deployment, rather than falling back to
-public content. Private content is rendered in memory and published as a single
+public content. Private Markdown uses the same Hugo markup configuration and
+render hooks as public articles. Its temporary source, rendered fragments and
+Hugo caches stay in an isolated owner-only temporary directory, which is
+removed on success or failure. Only encrypted content is published, as a single
 AES-256-GCM authenticated ciphertext with PBKDF2-SHA256 key derivation.
 
 Private Markdown wrapper notes can contain `![[Vault-relative/path/to/note]]`.
@@ -18,7 +21,9 @@ source. Every build rereads these references, so edits become visible after
 the original is committed, pushed, and successfully deployed. Reference cycles,
 ambiguous missing targets, and references outside the Vault are rejected.
 
-The standalone unlock page loads only same-origin scripts. Passwords, keys,
+The unlock page reuses the blog's shared layout, header, stylesheet and article
+components, while omitting telemetry, third-party scripts and comments. It loads
+only same-origin reading scripts. Passwords, keys,
 decrypted text, and attachment blobs are not written to browser storage; locking
 or leaving the page clears the reader. Unchanged public notes retain their
 normal incremental cache. Private notes are not sent to DeepSeek.

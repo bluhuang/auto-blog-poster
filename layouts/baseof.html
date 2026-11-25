@@ -1,0 +1,43 @@
+<!doctype html>
+<html
+  itemscope
+  class="{{- if not site.Params.theme_switcher -}}{{- site.Params.theme_default -}}{{- end -}}"
+  lang="{{ site.Language.Locale | default `en-US` }}"
+  itemtype="http://schema.org/WebPage">
+  <head>
+    {{ partial "essentials/head.html" . }}
+    {{/* Same framework and stylesheet; keep privacy-sensitive cache variants separate. */}}
+    {{ partialCached "essentials/style.html" . (.Params.private_space | default false) }}
+  </head>
+  <body class="flex flex-col min-h-screen">
+    {{ if not .Params.private_space }}
+      {{ if hugo.IsProduction }}
+        {{ partialCached "preloader.html" . }}
+        {{ partialCached "gtm-noscript.html" . }}
+      {{ else }}
+        {{ partial "preloader.html" . }}
+        {{ partial "components/tw-size-indicator.html" . }}
+      {{ end }}
+      {{ partialCached "announcement.html" . }}
+    {{ end }}
+    {{ if .Params.private_space }}
+      {{ $base := urls.Parse site.BaseURL }}
+      {{ $origin := printf "%s://%s" $base.Scheme $base.Host }}
+      {{ replace (string (partial "essentials/header.html" .)) $origin "" | safeHTML }}
+    {{ else }}
+      {{ partial "essentials/header.html" . }}
+    {{ end }}
+    {{ if not .Params.private_space }}
+      {{ partial "search-modal.html" (dict "Context" .) }}
+    {{ end }}
+    <main class="grow">{{ block "main" . }}{{ end }}</main>
+    {{ if .Params.private_space }}
+      {{ $base := urls.Parse site.BaseURL }}
+      {{ $origin := printf "%s://%s" $base.Scheme $base.Host }}
+      {{ replace (string (partial "essentials/footer.html" .)) $origin "" | safeHTML }}
+    {{ else }}
+      {{ partial "essentials/footer.html" . }}
+    {{ end }}
+    {{ partialCached "essentials/script.html" . (.Params.private_space | default false) }}
+  </body>
+</html>

@@ -1,0 +1,13 @@
+<aside class="article-toc" id="article-toc-container" aria-label="文章目录"{{ if .Params.private_space }} data-private-toc hidden{{ end }}>
+  <div class="article-toc-header"><span>目录</span><span class="article-toc-percent" id="article-toc-percent">0%</span></div>
+  <div class="article-toc-progress-track" aria-hidden="true"><span class="article-toc-progress-bar" id="article-toc-progress-bar"></span></div>
+  <nav class="article-toc-nav" id="article-toc-nav"></nav>
+</aside>
+<button class="article-toc-trigger" id="article-toc-trigger" type="button" aria-label="打开文章目录"{{ if .Params.private_space }} data-private-toc hidden{{ end }}>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg><span>目录</span>
+</button>
+<aside class="article-toc-drawer" id="article-toc-drawer" aria-hidden="true"{{ if .Params.private_space }} data-private-toc hidden{{ end }}>
+  <div class="article-toc-drawer-header"><span>文章目录</span><button class="article-toc-drawer-close" id="article-toc-drawer-close" aria-label="关闭">&times;</button></div>
+  <nav class="article-toc-drawer-nav" id="article-toc-drawer-nav"></nav>
+</aside>
+<div class="article-toc-overlay" id="article-toc-overlay" aria-hidden="true"{{ if .Params.private_space }} data-private-toc hidden{{ end }}></div>

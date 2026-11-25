@@ -31,6 +31,8 @@ node_modules/
 # Browser math runtime copied from the pinned npm dependency during builds.
 static/vendor/katex/katex.min.js
 static/vendor/katex/auto-render.min.js
+static/vendor/mermaid/
+static/vendor/fontawesome/
 *.py[cod]
 .hash_cache.json
 .deepseek_cache.json

@@ -57,30 +57,7 @@
     </div>
 
     {{ if $hasToc }}
-      <aside class="article-toc" id="article-toc-container" aria-label="文章目录">
-        <div class="article-toc-header"><span>目录</span><span class="article-toc-percent" id="article-toc-percent">0%</span></div>
-        <div class="article-toc-progress-track" aria-hidden="true"><span class="article-toc-progress-bar" id="article-toc-progress-bar"></span></div>
-        <nav class="article-toc-nav" id="article-toc-nav"></nav>
-      </aside>
-
-      <button class="article-toc-trigger" id="article-toc-trigger" type="button" aria-label="打开文章目录">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-          <circle cx="4" cy="6" r="1" fill="currentColor" />
-          <circle cx="4" cy="12" r="1" fill="currentColor" />
-          <circle cx="4" cy="18" r="1" fill="currentColor" />
-        </svg>
-        <span>目录</span>
-      </button>
-
-      <aside class="article-toc-drawer" id="article-toc-drawer" aria-hidden="true">
-        <div class="article-toc-drawer-header">
-          <span>文章目录</span>
-          <button class="article-toc-drawer-close" id="article-toc-drawer-close" aria-label="关闭">&times;</button>
-        </div>
-        <nav class="article-toc-drawer-nav" id="article-toc-drawer-nav"></nav>
-      </aside>
-      <div class="article-toc-overlay" id="article-toc-overlay" aria-hidden="true"></div>
+      {{ partial "article-toc" . }}
     {{ end }}
   </article>
 
@@ -103,55 +80,4 @@
     </section>
   {{ end }}
 
-  <script>
-    (() => {
-      const article = document.getElementById("article-content");
-      const readingTime = document.getElementById("article-reading-time");
-      const wordCount = document.getElementById("article-word-count");
-      const pageProgress = document.getElementById("article-reading-progress-bar");
-      const tocProgress = document.getElementById("article-toc-progress-bar");
-      const tocPercent = document.getElementById("article-toc-percent");
-      if (!article || !readingTime || !wordCount) return;
-
-      const clone = article.cloneNode(true);
-      let codeCharacters = 0;
-      const proseBlockLanguages = new Set(["", "text", "test", "txt", "plaintext", "plain", "mermaid"]);
-
-      clone.querySelectorAll("pre").forEach((node) => {
-        const wrapperLanguage = node.closest("[data-language]")?.getAttribute("data-language") || "";
-        const codeLanguage = node.querySelector("code")?.getAttribute("data-lang") || "";
-        const classLanguage = Array.from(node.querySelector("code")?.classList || []).find((name) => name.startsWith("language-"))?.slice(9) || "";
-        const language = (wrapperLanguage || codeLanguage || classLanguage).toLowerCase();
-        const isMermaid = node.classList.contains("mermaid");
-        if (!isMermaid && !proseBlockLanguages.has(language)) codeCharacters += node.textContent.trim().length;
-        node.remove();
-      });
-
-      clone.querySelectorAll("script, style, template, noscript, svg, .katex, .mermaid, [aria-hidden='true']").forEach((node) => node.remove());
-
-      const text = clone.textContent.replace(/\s+/g, " ").trim();
-      const chineseCharacters = (text.match(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g) || []).length;
-      const englishText = text.replace(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, " ");
-      const englishWords = (englishText.match(/\b[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*\b/g) || []).length;
-      const minutes = Math.max(1, Math.ceil(chineseCharacters / 450 + englishWords / 230 + codeCharacters / 360));
-
-      readingTime.textContent = `约 ${minutes} 分钟`;
-      wordCount.textContent = `${chineseCharacters} 字 · ${englishWords} 词`;
-
-      const updateProgress = () => {
-        const articleTop = article.getBoundingClientRect().top + window.scrollY;
-        const articleHeight = article.offsetHeight;
-        const viewportAnchor = window.scrollY + window.innerHeight * 0.35;
-        const progress = Math.max(0, Math.min(1, (viewportAnchor - articleTop) / articleHeight));
-        const percentage = Math.round(progress * 100);
-        if (pageProgress) pageProgress.style.width = `${percentage}%`;
-        if (tocProgress) tocProgress.style.width = `${percentage}%`;
-        if (tocPercent) tocPercent.textContent = `${percentage}%`;
-      };
-
-      updateProgress();
-      window.addEventListener("scroll", updateProgress, { passive: true });
-      window.addEventListener("resize", updateProgress);
-    })();
-  </script>
 {{ end }}

@@ -9,6 +9,7 @@
 -->
 
 <!-- DNS preconnect -->
+{{ if not .Params.private_space }}
 <meta http-equiv="x-dns-prefetch-control" content="on" />
 <link rel="preconnect" href="https://use.fontawesome.com" crossorigin />
 <link rel="preconnect" href="//cdnjs.cloudflare.com" />
@@ -22,6 +23,7 @@
 <link rel="dns-prefetch" href="//connect.facebook.net" />
 <link rel="dns-prefetch" href="//platform.linkedin.com" />
 <link rel="dns-prefetch" href="//platform.twitter.com" />
+{{ end }}
 
 <!-- main styles -->
 <!-- KaTeX is intentionally standalone: its CSS references bundled fonts
@@ -32,17 +34,24 @@
 
 {{ range site.Params.plugins.css }}
   {{ if findRE "^http" .link }}
+    {{ if not $.Params.private_space }}
     <link
       crossorigin="anonymous"
       media="all"
       rel="stylesheet"
       href="{{ .link | relURL }}"
       {{ .attributes | safeHTMLAttr }} />
+    {{ end }}
   {{ else }}
+    {{ $plugin := resources.Get .link }}
+    {{ if and $.Params.private_space (strings.Contains .link "font-awesome") }}
+      {{ $content := replaceRE `https://cdnjs\.cloudflare\.com/ajax/libs/font-awesome/[^/]+/webfonts/` ("vendor/fontawesome/" | relURL) $plugin.Content }}
+      {{ $plugin = resources.FromString (printf "private/%s" .link) $content }}
+    {{ end }}
     {{ if not .lazy }}
-      {{ $styles = $styles | append (resources.Get .link) }}
+      {{ $styles = $styles | append $plugin }}
     {{ else }}
-      {{ $stylesLazy = $stylesLazy | append (resources.Get .link) }}
+      {{ $stylesLazy = $stylesLazy | append $plugin }}
     {{ end }}
   {{ end }}
 {{ end }}
@@ -68,9 +77,11 @@
 {{ $styles = $styles | append $articlePageCSS }}
 {{ $styles = $styles | append $articlePageFixCSS }}
 {{ $styles = $styles | append $guestbookPageCSS }}
-{{ $styles = $styles | resources.Concat "css/style.css" }}
+{{ $styleTarget := cond (.Params.private_space | default false) "css/style-private.css" "css/style.css" }}
+{{ $styles = $styles | resources.Concat $styleTarget }}
 
-{{ $stylesLazy = $stylesLazy | resources.Concat "css/style-lazy.css" }}
+{{ $lazyTarget := cond (.Params.private_space | default false) "css/style-private-lazy.css" "css/style-lazy.css" }}
+{{ $stylesLazy = $stylesLazy | resources.Concat $lazyTarget }}
 
 {{ if hugo.IsProduction }}
   {{ $styles = $styles | fingerprint }}

@@ -15,9 +15,8 @@ async function renderMermaid() {
   if (!nodes.length) return;
 
   try {
-    mermaidModule ??= await import(
-      "https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.esm.min.mjs"
-    );
+    // Public and encrypted articles share one pinned, same-origin renderer.
+    mermaidModule ??= await import(new URL("../vendor/mermaid/mermaid.esm.min.mjs", import.meta.url).href);
     const mermaid = mermaidModule.default;
     mermaid.initialize({
       startOnLoad: false,
@@ -57,6 +56,7 @@ const queueRender = () => {
 };
 
 document.addEventListener("DOMContentLoaded", queueRender);
+document.addEventListener("article:updated", queueRender);
 
 new MutationObserver((mutations) => {
   if (

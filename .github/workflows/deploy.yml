@@ -53,18 +53,18 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: "0.162.1"
+          extended: true
+
       - name: Run Python regressions
         run: python -m unittest discover -s tests -p "test_*.py" -v
 
       - name: Install validation browser
         run: playwright install --with-deps chromium
         timeout-minutes: 10
-
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: "0.162.1"
-          extended: true
 
       - name: Pre-download Hugo modules
         run: hugo mod graph

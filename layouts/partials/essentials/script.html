@@ -1,4 +1,14 @@
 <!-- JS Plugins + Main script -->
+{{ if .Params.private_space }}
+  {{/* Reuse local reading behavior, never the public telemetry/search bundle. */}}
+  {{ with resources.Get "plugins/glightbox/glightbox.js" }}
+    {{ $lightbox := . | minify | fingerprint }}
+    <script src="{{ $lightbox.RelPermalink }}" integrity="{{ $lightbox.Data.Integrity }}" crossorigin="anonymous" defer></script>
+  {{ end }}
+  {{ $reading := resources.Get "js/article-reading.js" | minify | fingerprint }}
+  <script src="{{ $reading.RelPermalink }}" integrity="{{ $reading.Data.Integrity }}" crossorigin="anonymous" defer></script>
+  <script type="module" src="{{ "js/mermaid-init.js" | relURL }}"></script>
+{{ else }}
 {{ $scripts := slice }}
 {{ $scriptsLazy := slice }}
 {{ range site.Params.plugins.js }}
@@ -54,3 +64,4 @@
 
 <!-- announcement -->
 {{ partialCached "announcement-script.html" . }}
+{{ end }}

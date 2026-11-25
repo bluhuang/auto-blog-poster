@@ -2,10 +2,12 @@
   "name": "auto-blog-poster",
   "private": true,
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "6.7.1",
     "@tailwindcss/cli": "^4.3.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
     "katex": "0.19.1",
+    "mermaid": "11.17.2",
     "tailwind-bootstrap-grid": "^7.0.0",
     "tailwindcss": "^4.3.0"
   }

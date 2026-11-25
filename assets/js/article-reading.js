@@ -1,5 +1,71 @@
 (function () {
   "use strict";
+  let updateReadingProgress = () => {};
+  function initArticleMetrics() {
+      const article = document.getElementById("article-content");
+      const readingTime = document.getElementById("article-reading-time");
+      const wordCount = document.getElementById("article-word-count");
+      const pageProgress = document.getElementById("article-reading-progress-bar");
+      const tocProgress = document.getElementById("article-toc-progress-bar");
+      const tocPercent = document.getElementById("article-toc-percent");
+      if (!article || !readingTime || !wordCount) return;
+      if (!article.textContent.trim() || article.closest('[data-private-workspace][hidden]')) {
+        readingTime.textContent = "";
+        wordCount.textContent = "";
+        if (pageProgress) pageProgress.style.width = "0%";
+        if (tocProgress) tocProgress.style.width = "0%";
+        if (tocPercent) tocPercent.textContent = "0%";
+        updateReadingProgress = () => {};
+        return;
+      }
+
+      const clone = article.cloneNode(true);
+      let codeCharacters = 0;
+      const proseBlockLanguages = new Set(["", "text", "test", "txt", "plaintext", "plain", "mermaid"]);
+
+      clone.querySelectorAll("pre").forEach((node) => {
+        const wrapperLanguage = node.closest("[data-language]")?.getAttribute("data-language") || "";
+        const codeLanguage = node.querySelector("code")?.getAttribute("data-lang") || "";
+        const classLanguage = Array.from(node.querySelector("code")?.classList || []).find((name) => name.startsWith("language-"))?.slice(9) || "";
+        const language = (wrapperLanguage || codeLanguage || classLanguage).toLowerCase();
+        const isMermaid = node.classList.contains("mermaid");
+        if (!isMermaid && !proseBlockLanguages.has(language)) codeCharacters += node.textContent.trim().length;
+        node.remove();
+      });
+
+      clone.querySelectorAll("script, style, template, noscript, svg, .katex, .mermaid, [aria-hidden='true']").forEach((node) => node.remove());
+
+      const text = clone.textContent.replace(/\s+/g, " ").trim();
+      const chineseCharacters = (text.match(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g) || []).length;
+      const englishText = text.replace(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, " ");
+      const englishWords = (englishText.match(/\b[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*\b/g) || []).length;
+      const minutes = Math.max(1, Math.ceil(chineseCharacters / 450 + englishWords / 230 + codeCharacters / 360));
+
+      readingTime.textContent = `约 ${minutes} 分钟`;
+      wordCount.textContent = `${chineseCharacters} 字 · ${englishWords} 词`;
+
+      updateReadingProgress = () => {
+        const articleTop = article.getBoundingClientRect().top + window.scrollY;
+        const articleHeight = Math.max(1, article.offsetHeight);
+        const viewportAnchor = window.scrollY + window.innerHeight * 0.35;
+        const progress = Math.max(0, Math.min(1, (viewportAnchor - articleTop) / articleHeight));
+        const percentage = Math.round(progress * 100);
+        if (pageProgress) pageProgress.style.width = `${percentage}%`;
+        if (tocProgress) tocProgress.style.width = `${percentage}%`;
+        if (tocPercent) tocPercent.textContent = `${percentage}%`;
+      };
+
+      updateReadingProgress();
+  }
+  window.addEventListener("scroll", () => updateReadingProgress(), {passive:true});
+  window.addEventListener("resize", () => updateReadingProgress());
+  document.addEventListener("article:updated", initArticleMetrics);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initArticleMetrics);
+  else initArticleMetrics();
+})();
+
+(function () {
+  "use strict";
 
   var tocNav = document.getElementById("article-toc-nav");
   var drawerNav = document.getElementById("article-toc-drawer-nav");
@@ -54,7 +120,7 @@
       var target = document.getElementById(item.id);
       if (target) {
         target.scrollIntoView({ behavior: "smooth" });
-        history.replaceState(null, "", "#" + item.id);
+        if (!target.closest("[data-private-space]")) history.replaceState(null, "", "#" + item.id);
       }
       closeDrawer();
     });
@@ -170,12 +236,16 @@
   document.addEventListener("keydown", handleKeyDown);
 
   function init() {
+    if (observer) observer.disconnect();
+    lastActiveId = null;
     buildToc();
-    if (!tocItems.length) return;
     renderTocNav();
     renderDrawerNav();
+    if (!tocItems.length) { closeDrawer(); return; }
     setupScrollSpy();
   }
+
+  document.addEventListener("article:updated", init);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

@@ -1,6 +1,6 @@
 """Build a password-encrypted, self-contained private reading space.
 
-Private source text is rendered only in memory. The public build receives an
+Private source text is rendered in an isolated temporary Hugo project. The public build receives an
 authenticated ciphertext and a generic unlock page, never private Markdown,
 titles, attachment names, or plaintext assets.
 """
@@ -20,13 +20,15 @@ from urllib.parse import unquote, urlsplit
 import urllib.request
 
 import bleach
+from bleach.css_sanitizer import CSSSanitizer
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import markdown
 import yaml
 
 from modules.git_ops import get_attachment_folder
+from modules.private_hugo_renderer import render_markdown_batch, PrivateHugoError
+from modules.structured_content import normalize_math_delimiters
 
 
 class PrivateBundleError(RuntimeError):
@@ -187,12 +189,15 @@ class _Renderer:
             return "private-note:" + note_id if note_id else "#"
         return self.asset(self.resolve(value, source))
 
-    def render(self, source: Path, trail: tuple[Path, ...] = ()) -> str:
+    def prepare(self, source: Path, trail: tuple[Path, ...] = ()) -> str:
         source = _inside(source, self.vault)
         if source in trail or len(trail) >= 32:
             raise PrivateBundleError("A private note reference is cyclic or too deeply nested")
         text = source.read_text(encoding="utf-8")
         text = re.sub(r"\A---\s*\n.*?\n---\s*(?:\n|$)", "", text, count=1, flags=re.S)
+        text = normalize_math_delimiters(text)
+        embedded: dict[str, str] = {}
+        marker_prefix = "PRIVATEINPUT" + os.urandom(8).hex().upper()
 
         def embed(match: re.Match) -> str:
             destination, _, options = match.group(1).partition("|")
@@ -200,7 +205,9 @@ class _Renderer:
             suffix = Path(destination.split("#", 1)[0]).suffix.lower()
             if not suffix or suffix == ".md":
                 target = self.resolve(destination, source, is_note=True)
-                return "\n\n" + self.render(target, trail + (source,)) + "\n\n"
+                marker = marker_prefix + "EMBED" + str(len(embedded)) + "END"
+                embedded[marker] = self.prepare(target, trail + (source,))
+                return "\n\n" + marker + "\n\n"
             target = self.resolve(destination, source)
             url = self.asset(target)
             label = html.escape(options if options and not options.isdigit() else target.stem)
@@ -218,14 +225,13 @@ class _Renderer:
                 return html.escape(label)
             return f'<a href="{html.escape(url, quote=True)}">{html.escape(label)}</a>'
 
-        # Never interpret Obsidian syntax inside fenced examples/code. Protect
-        # LaTeX before Markdown sees underscores, asterisks, or backslashes.
+        # Rewriting only runs outside examples and math. The final Markdown,
+        # including recursively embedded originals, is rendered by Hugo once.
         pieces = re.split(r"(^```[^\n]*\n.*?^```[ \t]*$|^~~~[^\n]*\n.*?^~~~[ \t]*$)", text, flags=re.M | re.S)
         math_spans: dict[str, str] = {}
-        marker_prefix = "PRIVATEMATH" + os.urandom(8).hex().upper()
 
         def protect_math(match: re.Match) -> str:
-            marker = marker_prefix + str(len(math_spans)) + "END"
+            marker = marker_prefix + "PROTECTED" + str(len(math_spans)) + "END"
             math_spans[marker] = match.group(0)
             return marker
 
@@ -236,33 +242,36 @@ class _Renderer:
             r"|(?<!\\)\$(?!\$)(?:\\.|[^$\n])+?(?<!\\)\$",
             re.S,
         )
+
+        def markdown_link(match: re.Match) -> str:
+            image, label, target, title = match.groups()
+            url = self.url(target.strip("<>"), source, image=bool(image))
+            if image:
+                # Keep ordinary Markdown images in the shared image hook.
+                return f'![{label}]({url}{title or ""})'
+            return f'<a href="{html.escape(url, quote=True)}">{html.escape(label)}</a>'
+
+        def raw_tag(match: re.Match) -> str:
+            rewriter = _URLRewriter(self, source)
+            rewriter.feed(match.group(0))
+            return "".join(rewriter.output)
+
         for index in range(0, len(pieces), 2):
             pieces[index] = math_pattern.sub(protect_math, pieces[index])
+            pieces[index] = re.sub(r"`+[^`\n]*`+", protect_math, pieces[index])
             pieces[index] = re.sub(r"!\[\[([^\]\n]+)\]\]", embed, pieces[index])
             pieces[index] = re.sub(r"(?<!!)\[\[([^\]\n]+)\]\]", wiki_link, pieces[index])
-        rendered = markdown.markdown(
-            "".join(pieces), extensions=["tables", "fenced_code", "sane_lists"]
-        )
+            pieces[index] = re.sub(
+                r'(!?)\[([^\]\n]*)\]\((<[^>\n]+>|[^\s)]+)(\s+["\'][^"\']*["\'])?\)',
+                markdown_link, pieces[index],
+            )
+            pieces[index] = re.sub(r'<(?:img|a)\b[^>]*>', raw_tag, pieces[index], flags=re.I)
+        rendered = "".join(pieces)
         for marker, math_text in math_spans.items():
-            rendered = rendered.replace(marker, html.escape(math_text, quote=False))
-        rewriter = _URLRewriter(self, source)
-        rewriter.feed(rendered)
-        return bleach.clean(
-            "".join(rewriter.output),
-            tags={
-                "p", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "a",
-                "img", "ul", "ol", "li", "strong", "em", "del", "s", "blockquote",
-                "pre", "code", "table", "thead", "tbody", "tr", "th", "td",
-                "div", "span", "sup", "sub", "details", "summary", "input",
-            },
-            attributes={
-                "a": ["href", "title"], "img": ["src", "alt", "title", "width", "height"],
-                "code": ["class"], "th": ["align"], "td": ["align"],
-                "input": ["type", "checked", "disabled"],
-            },
-            protocols={"http", "https", "mailto", "private-asset", "private-note"},
-            strip=True,
-        )
+            rendered = rendered.replace(marker, math_text)
+        for marker, child in embedded.items():
+            rendered = rendered.replace(marker, child)
+        return rendered
 
 
 class _URLRewriter(HTMLParser):
@@ -296,6 +305,72 @@ class _URLRewriter(HTMLParser):
         self.output.append(f"&#{name};")
 
 
+def _sanitize_rendered_html(rendered: str) -> str:
+    """Keep shared Hugo/KaTeX/Chroma markup without permitting active HTML."""
+    math_tags = {
+        "math", "semantics", "annotation", "mrow", "mi", "mn", "mo", "mtext",
+        "mfrac", "msqrt", "mroot", "msup", "msub", "msubsup", "munder", "mover",
+        "munderover", "mtable", "mtr", "mtd", "mspace", "mpadded", "mstyle",
+        "mphantom", "menclose", "mmultiscripts", "mprescripts", "none",
+    }
+    math_attributes = {
+        "xmlns", "display", "mathvariant", "stretchy", "lspace", "rspace", "accent",
+        "accentunder", "fence", "separator", "displaystyle", "scriptlevel", "linethickness",
+        "columnalign", "rowalign", "columnspacing", "rowspacing", "rowlines", "columnlines",
+        "frame", "framespacing", "width", "height", "depth", "voffset", "notation",
+    }
+    general_attributes = {
+        "class", "id", "style", "role", "aria-hidden", "aria-label", "data-lang",
+        "data-language", "data-mermaid-source", "tabindex",
+    }
+
+    def allow_attribute(tag: str, name: str, value: str) -> bool:
+        if name in general_attributes:
+            return True
+        if tag in math_tags and name in math_attributes:
+            return True
+        if tag == "annotation":
+            return name == "encoding" and value == "application/x-tex"
+        if tag == "svg":
+            return name.lower() in {"width", "height", "viewbox", "preserveaspectratio", "xmlns"}
+        if tag == "path":
+            return name == "d"
+        if tag == "a":
+            return name in {"href", "title"}
+        if tag == "img":
+            return name in {"src", "alt", "title", "width", "height", "loading", "decoding"}
+        if tag in {"td", "th"}:
+            return name in {"align", "colspan", "rowspan"}
+        if tag == "input":
+            return name in {"checked", "disabled"} or name == "type" and value == "checkbox"
+        return False
+
+    css = CSSSanitizer(allowed_css_properties={
+        "color", "background-color", "font-size", "font-weight", "font-style", "font-family",
+        "text-decoration", "text-align", "display", "position", "height", "width", "min-width",
+        "max-width", "top", "left", "right", "bottom", "vertical-align", "margin", "margin-left",
+        "margin-right", "margin-top", "margin-bottom", "padding", "padding-left", "padding-right",
+        "padding-top", "padding-bottom", "border-style", "border-width", "border-color",
+        "border-bottom-width", "border-right-width", "border-top-width", "border-left-width",
+        "line-height", "white-space",
+        "tab-size", "-moz-tab-size", "-o-tab-size", "-webkit-text-size-adjust",
+    })
+    return bleach.clean(
+        rendered,
+        tags={
+            "p", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "a", "img", "ul", "ol",
+            "li", "strong", "em", "del", "s", "blockquote", "pre", "code", "table", "thead",
+            "tbody", "tfoot", "tr", "th", "td", "div", "span", "sup", "sub", "details", "summary",
+            "input", "dl", "dt", "dd", "kbd", "samp", "var", "mark", "small", "svg", "path",
+            "section", "figure", "figcaption", "caption", "abbr", "b", "i", "u",
+        } | math_tags,
+        attributes=allow_attribute,
+        protocols={"http", "https", "mailto", "private-asset", "private-note"},
+        css_sanitizer=css,
+        strip=True,
+    )
+
+
 def build_bundle(notes_root: Path, config: dict) -> None:
     """Generate ciphertext plus a non-listable shell; never call an AI API."""
     settings = config.get("private_space", {})
@@ -318,17 +393,34 @@ def build_bundle(notes_root: Path, config: dict) -> None:
     renderer = _Renderer(notes_root, vault, private_notes, settings)
     folders: dict[str, list[dict]] = {}
     try:
+        # Reuse the public article's title/duplicate-H1 policy, not a second
+        # private convention. Import lazily to keep the processing modules
+        # independent during startup.
+        from modules.content_processor import _strip_title_prefix, _extract_first_h1, _normalize_headings
+        documents, titles = {}, {}
+        for note in private_notes:
+            prepared = renderer.prepare(note)
+            title = ""
+            if config.get("processing", {}).get("title_source", "filename") == "h1":
+                title = _extract_first_h1(prepared) or ""
+            if not title:
+                title = _strip_title_prefix(note.stem, config)
+            titles[renderer.note_ids[note]] = title
+            documents[renderer.note_ids[note]] = _normalize_headings(prepared, title)
+        rendered = render_markdown_batch(documents, config)
         for note in private_notes:
             folder = note.parent.relative_to(notes_root).as_posix()
             folders.setdefault(folder, []).append({
-                "id": renderer.note_ids[note], "title": note.stem,
-                "html": renderer.render(note),
+                "id": renderer.note_ids[note], "title": titles[renderer.note_ids[note]],
+                "author": config.get("processing", {}).get("default_author", "BluHuang"),
+                "html": _sanitize_rendered_html(rendered[renderer.note_ids[note]]),
             })
-    except (OSError, ValueError, PrivateBundleError) as error:
+    except (OSError, ValueError, PrivateBundleError, PrivateHugoError) as error:
         raise PrivateBundleError("Private content rendering failed; refusing to publish") from None
     payload = json.dumps({
         "folders": [{"name": name, "notes": notes} for name, notes in sorted(folders.items())],
         "assets": renderer.assets,
+        "renderer": "hugo",
     }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     iterations = int(settings.get("iterations", 600000))
     if iterations < 600000:
@@ -344,13 +436,15 @@ def build_bundle(notes_root: Path, config: dict) -> None:
     static_root = Path(config.get("output", {}).get("static_dir", "static")).resolve()
     bundle_path = _inside(static_root / _relative_path(settings.get("bundle_path", "private-space/bundle.json")), static_root)
     bundle_path.parent.mkdir(parents=True, exist_ok=True)
-    bundle_path.write_text(json.dumps(envelope, separators=(",", ":")), encoding="utf-8")
+    envelope_text = json.dumps(envelope, separators=(",", ":"))
+    bundle_path.write_text(envelope_text, encoding="utf-8")
+    bundle_revision = hashlib.sha256(envelope_text.encode("utf-8")).hexdigest()
     content_root = Path(config.get("output", {}).get("content_dir", "content"))
     content_root.mkdir(parents=True, exist_ok=True)
     frontmatter = {
         "title": settings.get("title", "Private Space"), "layout": "private-space",
         "url": settings.get("url", "private-space/"),
-        "params": {"private_space": True},
+        "params": {"private_space": True, "private_bundle_revision": bundle_revision},
         "build": {"list": "never", "render": "always"},
         "outputs": ["HTML"], "sitemap": {"disable": True},
     }

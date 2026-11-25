@@ -133,7 +133,7 @@
         </svg>
       </button>
       {{ with site.Params.search }}
-        {{ if .enable }}
+        {{ if and .enable (not $.Params.private_space) }}
           <button
             aria-label="search"
             class="border-border text-text-dark hover:text-primary

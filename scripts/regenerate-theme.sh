@@ -50,6 +50,28 @@ cp "$KATEX_DIST/contrib/auto-render.min.js" static/vendor/katex/auto-render.min.
 cp "$KATEX_DIST/katex.min.css" static/vendor/katex/katex.min.css
 cp "$KATEX_DIST/fonts/"* static/vendor/katex/fonts/
 
+# The private reader uses the same Mermaid version as public articles, but
+# imports its runtime from this origin instead of disclosing private graphs
+# to any third-party script.
+MERMAID_DIST="node_modules/mermaid/dist"
+if [ ! -f "$MERMAID_DIST/mermaid.esm.min.mjs" ]; then
+  echo "ERROR: Mermaid dependency is missing; run npm ci first" >&2
+  exit 1
+fi
+mkdir -p static/vendor/mermaid/chunks/mermaid.esm.min
+cp "$MERMAID_DIST/mermaid.esm.min.mjs" static/vendor/mermaid/
+cp "$MERMAID_DIST/chunks/mermaid.esm.min/"*.mjs static/vendor/mermaid/chunks/mermaid.esm.min/
+cp node_modules/mermaid/LICENSE static/vendor/mermaid/LICENSE
+
+# The shared icon stylesheet keeps its exact glyphs in Private Space without
+# contacting the public CDN after a note is decrypted.
+FONT_DIST="node_modules/@fortawesome/fontawesome-free/webfonts"
+mkdir -p static/vendor/fontawesome
+for font in fa-brands-400.woff2 fa-brands-400.ttf fa-solid-900.woff2 fa-solid-900.ttf; do
+  cp "$FONT_DIST/$font" static/vendor/fontawesome/
+done
+cp node_modules/@fortawesome/fontawesome-free/LICENSE.txt static/vendor/fontawesome/LICENSE.txt
+
 echo ""
 echo "✓ 主题 CSS 已重新生成"
 echo "  输出：themes/hugoplate/assets/css/generated-theme.css"
