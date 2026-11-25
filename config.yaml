@@ -1,3 +1,13 @@
+private_space:
+  enabled: true
+  title: Private Space
+  source_dirs:
+  - coding
+  - Path
+  url: private-space/
+  bundle_path: private-space/bundle.json
+  password_env: PRIVATE_SPACE_PASSWORD
+  iterations: 600000
 deployment:
   commit_message: Auto deploy from blog poster [skip ci]
   target_branch: gh-pages
@@ -56,7 +66,7 @@ processing:
       - run-python
       timeout_seconds: 300
     - type: exclude_from_blog
-  local_vault_path: /Users/pakyen/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu
+  local_vault_path: /Users/bluhuang/Library/Mobile Documents/iCloud~md~obsidian/Documents/blu
     obsidian
   personal_images:
     avatar:

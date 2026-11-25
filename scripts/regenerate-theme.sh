@@ -37,6 +37,19 @@ echo "✓ 已同步 $ROOT_THEME_JSON → $EXAMPLE_THEME_JSON"
 # 跑原脚本
 node themes/hugoplate/scripts/themeGenerator.js
 
+# Private notes are decrypted only in the browser. Keep their math renderer
+# same-origin and version-matched to the public stylesheet and fonts.
+KATEX_DIST="node_modules/katex/dist"
+if [ ! -f "$KATEX_DIST/katex.min.js" ]; then
+  echo "ERROR: KaTeX dependency is missing; run npm ci first" >&2
+  exit 1
+fi
+mkdir -p static/vendor/katex/fonts
+cp "$KATEX_DIST/katex.min.js" static/vendor/katex/katex.min.js
+cp "$KATEX_DIST/contrib/auto-render.min.js" static/vendor/katex/auto-render.min.js
+cp "$KATEX_DIST/katex.min.css" static/vendor/katex/katex.min.css
+cp "$KATEX_DIST/fonts/"* static/vendor/katex/fonts/
+
 echo ""
 echo "✓ 主题 CSS 已重新生成"
 echo "  输出：themes/hugoplate/assets/css/generated-theme.css"

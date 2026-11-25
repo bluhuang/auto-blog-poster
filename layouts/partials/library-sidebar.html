@@ -12,6 +12,18 @@
     <p class="library-card-label" id="library-folders-heading">文件夹</p>
     <nav class="library-folder-tree" aria-label="博客文件夹">
       {{ partial "library-folder-tree" (dict "page" $current "node" site.Home "level" 0) }}
+      {{ $private := partial "private-space-config" . }}
+      {{ if $private.enabled }}
+        <div class="library-tree-node library-private-entry">
+          <div class="library-tree-row" style="--tree-level: 0">
+            <span class="library-tree-toggle library-tree-toggle-placeholder" aria-hidden="true"></span>
+            <a class="library-tree-link" href="{{ $private.url | default "private-space/" | relURL }}" data-private-space-link>
+              <svg class="library-folder-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span class="library-tree-name">{{ $private.title | default "Private Space" }}</span>
+            </a>
+          </div>
+        </div>
+      {{ end }}
     </nav>
   </section>
 </div>

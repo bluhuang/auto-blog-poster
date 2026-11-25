@@ -1,0 +1,2 @@
+{{- $config := os.ReadFile "config.yaml" | transform.Unmarshal -}}
+{{- return ($config.private_space | default dict) -}}

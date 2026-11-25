@@ -17,6 +17,9 @@ from modules import (
     hugo_builder,
     rename_migrator,
     site_validator,
+    private_policy,
+    private_bundle,
+    private_validation,
 )
 
 
@@ -112,6 +115,7 @@ def main() -> None:
         sys.exit(1)
 
     # Preserve generated output and LLM cache for source notes that only moved.
+    private_policy.clean_public_outputs(config)
     print()
     print("[2b/7] Detecting cache-preserving note moves ...")
     try:
@@ -147,6 +151,8 @@ def main() -> None:
             source_root=str(notes_root),
             config=config,
         )
+        private_policy.clean_public_outputs(config)
+        private_bundle.build_bundle(Path(notes_root), config)
         print(f"DeepSeek API calls: {deepseek_calls}")
         if args.deepseek_cache_only and deepseek_calls != 0:
             raise AssertionError("DeepSeek API calls must be 0 in cache-only mode")
@@ -174,6 +180,7 @@ def main() -> None:
     print()
     print("[4/7] Building Hugo site ...")
     try:
+        private_policy.clear_rendered_output(config)
         hugo_builder.build_site(config)
     except Exception as e:
         print(f"FATAL: Hugo build failed: {e}")
@@ -183,7 +190,9 @@ def main() -> None:
     print()
     print("[5/7] Validating rendered output ...")
     try:
+        private_policy.validate_public_output(config)
         site_validator.validate_generated_site(config)
+        private_validation.validate_private_space(config)
     except Exception as e:
         print(f"FATAL: Pre-deploy validation failed: {e}")
         sys.exit(1)

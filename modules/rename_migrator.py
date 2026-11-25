@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Tuple
 
 from modules.content_processor import compute_processing_hash
+from modules.private_policy import is_private
 
 
 _FILE_TIMES_PATH = ".file_times.json"
@@ -128,6 +129,7 @@ def migrate_cache_preserving_renames(
     source = Path(source_root)
     current_paths = sorted(
         path.relative_to(source).as_posix() for path in source.rglob("*.md")
+        if not is_private(path.relative_to(source).as_posix(), config)
     )
     current_set = set(current_paths)
     old_set = set(raw_hash_cache)

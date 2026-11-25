@@ -28,12 +28,16 @@ static/images/z_mixed/
 .env
 __pycache__/
 node_modules/
+# Browser math runtime copied from the pinned npm dependency during builds.
+static/vendor/katex/katex.min.js
+static/vendor/katex/auto-render.min.js
 *.py[cod]
 .hash_cache.json
 .deepseek_cache.json
 .file_times.json
 hugo_stats.json
 static/navigation.json
+static/private-space/
 failed_notes.log
 .DS_Store
 *.log

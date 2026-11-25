@@ -19,6 +19,7 @@ from modules.git_ops import (
 )
 from modules.obsidian_parser import convert_markdown_links, extract_image_links
 from modules.section_processor import process_configured_sections
+from modules.private_policy import public_paths, is_private
 from modules.structured_content import (
     PLACEHOLDER_RE,
     StructuredContentProtector,
@@ -377,7 +378,7 @@ def _remap_cached_response_from_output(
 
 
 def get_files_to_process(
-    root_dir: str, cache_path: str
+    root_dir: str, cache_path: str, config: Optional[dict] = None
 ) -> Tuple[List[str], List[str]]:
     """Determine which .md files need processing and which have been deleted.
 
@@ -390,7 +391,7 @@ def get_files_to_process(
     The hash cache is ***not*** updated by this function; the caller decides
     when to persist it via save_hash_cache().
     """
-    current_files = set(scan_md_files(root_dir))
+    current_files = set(public_paths(root_dir, config or {}))
     old_cache = load_hash_cache(cache_path)
     old_keys = set(old_cache.keys())
 
@@ -499,6 +500,8 @@ def process_single_note(
         Exception: If the DeepSeek client returns empty, or on any processing
             failure (image copy, etc.).
     """
+    if is_private(rel_path, config):
+        raise RuntimeError('Private notes must not enter the public content processor')
     print(f"Processing: {rel_path} ...")
 
     # 1. Read raw content
@@ -531,6 +534,11 @@ def process_single_note(
         ):
             dest_path = os.path.join(target_static_dir, target_rel)
             is_remote = source_abs.startswith(("http://", "https://"))
+            if not is_remote:
+                candidate = Path(source_abs).resolve()
+                notes_root = Path(source_root).resolve()
+                if candidate.is_relative_to(notes_root) and is_private(candidate.relative_to(notes_root), config):
+                    raise RuntimeError('Private attachments must not enter public content')
             needs_copy = not os.path.isfile(dest_path)
             if not is_remote and not needs_copy:
                 # Restored cached assets can have the same filename as a
@@ -816,7 +824,7 @@ def process_all_notes(
         print("force_reprocess_all = true: deleting cache and reprocessing all files")
         # Load old cache before deleting it, to detect files removed from source
         old_cache = load_hash_cache(hash_cache_path)
-        current_files = set(scan_md_files(source_root))
+        current_files = set(public_paths(source_root, config))
         to_delete = sorted(set(old_cache.keys()) - current_files)
         if to_delete:
             print(f"Files to delete ({len(to_delete)}):")
@@ -827,11 +835,11 @@ def process_all_notes(
             print(f"  removed {hash_cache_path}")
         to_process = sorted(current_files)
     else:
-        to_process, to_delete = get_files_to_process(source_root, hash_cache_path)
+        to_process, to_delete = get_files_to_process(source_root, hash_cache_path, config)
 
     only_paths = processing_cfg.get("_only_paths") or config.get("_only_paths", [])
     if only_paths:
-        available = set(scan_md_files(source_root))
+        available = set(public_paths(source_root, config))
         missing = sorted(set(only_paths) - available)
         if missing:
             raise FileNotFoundError(f"Requested source note(s) not found: {missing}")
@@ -865,7 +873,7 @@ def process_all_notes(
     # Lightweight date update for unchanged files (no DeepSeek cost).
     # Their content stays the same but front matter timestamps are
     # refreshed from the source (git log or vault mtimes).
-    all_current = set(scan_md_files(source_root))
+    all_current = set(public_paths(source_root, config))
     unchanged = sorted(all_current - set(to_process))
     if unchanged:
         print(f"Updating front matter dates for {len(unchanged)} "
@@ -884,7 +892,7 @@ def process_all_notes(
     _ensure_section_indexes(content_dir)
 
     # Remove orphan content files that exist in content/ but not in source
-    source_rel_paths = set(scan_md_files(source_root))
+    source_rel_paths = set(public_paths(source_root, config))
     orphan_count = 0
     for filepath in Path(content_dir).rglob("*.md"):
         rel = filepath.relative_to(content_dir).as_posix()
@@ -902,7 +910,7 @@ def process_all_notes(
     # Build new cache and collect mtimes
     new_cache: Dict[str, str] = {}
     mtimes: Dict[str, str] = {}
-    for rel_path in scan_md_files(source_root):
+    for rel_path in public_paths(source_root, config):
         abs_path = os.path.join(source_root, rel_path)
         new_cache[rel_path] = compute_processing_hash(abs_path)
         if rel_path in config.get("_deepseek_bypassed_paths", set()):

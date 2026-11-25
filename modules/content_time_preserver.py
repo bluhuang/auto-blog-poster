@@ -8,6 +8,7 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional
+from modules.private_policy import is_private
 
 
 _FILE_TIMES_PATH = ".file_times.json"
@@ -140,6 +141,8 @@ def reconcile_content_update_times(source_root: str, config: dict) -> int:
 
     for source_path in sorted(source.rglob("*.md")):
         rel_path = source_path.relative_to(source).as_posix()
+        if is_private(rel_path, config):
+            continue
         repo_rel_path = source_path.relative_to(Path(repo_root)).as_posix()
         timestamp = get_last_content_change_time(repo_root, repo_rel_path)
         if timestamp is None:
